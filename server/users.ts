@@ -1,11 +1,18 @@
 "use server";
 
-import { eq, inArray, not } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+
 import { db } from "@/db/drizzle";
-import { member, user } from "@/db/schema";
+import { user } from "@/db/schema";
 import { auth } from "@/lib/auth";
+
+/*
+|--------------------------------------------------------------------------
+| Current User
+|--------------------------------------------------------------------------
+*/
 
 export const getCurrentUser = async () => {
   const session = await auth.api.getSession({
@@ -24,79 +31,90 @@ export const getCurrentUser = async () => {
     redirect("/login");
   }
 
-  return {
-    ...session,
-    currentUser,
-  };
+  return currentUser;
 };
 
-export const signIn = async (email: string, password: string) => {
+/*
+|--------------------------------------------------------------------------
+| Sign In
+|--------------------------------------------------------------------------
+*/
+
+export const signIn = async (
+  username: string,
+  password: string
+) => {
   try {
-    await auth.api.signInEmail({
+    await auth.api.signInUsername({
       body: {
-        email,
+        username,
         password,
       },
     });
 
     return {
       success: true,
-      message: "Signed in successfully.",
+      message: "Login berhasil",
     };
   } catch (error) {
-    const e = error as Error;
-
     return {
       success: false,
-      message: e.message || "An unknown error occurred.",
+      message:
+        error instanceof Error
+          ? error.message
+          : "Terjadi kesalahan",
     };
   }
 };
 
+/*
+|--------------------------------------------------------------------------
+| Sign Up
+|--------------------------------------------------------------------------
+*/
+
 export const signUp = async (
+  username: string,
+  name: string,
   email: string,
-  password: string,
-  username: string
+  password: string
 ) => {
   try {
     await auth.api.signUpEmail({
       body: {
+        username,
+        name,
         email,
         password,
-        name: username,
       },
     });
 
     return {
       success: true,
-      message: "Signed up successfully.",
+      message: "Akun berhasil dibuat",
     };
   } catch (error) {
-    const e = error as Error;
-
     return {
       success: false,
-      message: e.message || "An unknown error occurred.",
+      message:
+        error instanceof Error
+          ? error.message
+          : "Terjadi kesalahan",
     };
   }
 };
 
-export const getUsers = async (organizationId: string) => {
+/*
+|--------------------------------------------------------------------------
+| Get All Users
+|--------------------------------------------------------------------------
+*/
+
+export const getUsers = async () => {
   try {
-    const members = await db.query.member.findMany({
-      where: eq(member.organizationId, organizationId),
+    return await db.query.user.findMany({
+      orderBy: (user, { asc }) => [asc(user.createdAt)],
     });
-
-    const users = await db.query.user.findMany({
-      where: not(
-        inArray(
-          user.id,
-          members.map((m) => m.userId)
-        )
-      ),
-    });
-
-    return users;
   } catch (error) {
     console.error(error);
     return [];

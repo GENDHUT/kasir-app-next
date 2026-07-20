@@ -2,8 +2,12 @@ import Image from "next/image";
 import Link from "next/link";
 import { ModeSwitcher } from "@/components/mode-switcher";
 import { Button } from "@/components/ui/button";
+import { requireRole } from "@/server/permission";
 
-export default function Home() {
+
+export default async function Home() {
+  const user = await requireRole("ADMIN" , "EMPLOYEE");
+
   return (
     <>
       <header className="absolute top-0 right-0 flex items-center justify-end p-4">
@@ -20,10 +24,9 @@ export default function Home() {
 
         <h1 className="font-bold text-4xl">Kasir APP</h1>
 
-        <p className="text-lg">
-          This is a starter project for Ala-Ala Cashier. It is a simple project that
-          uses Better Auth to authenticate users.
-        </p>
+        <h1 className="text-3xl font-bold">
+          Halo, {user.name} Role anda = {user.role}
+        </h1>
 
         <div className="flex gap-2">
           <Link href="/login">

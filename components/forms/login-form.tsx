@@ -28,10 +28,9 @@ import { Input } from "@/components/ui/input";
 import { authClient } from "@/lib/auth-client";
 import { cn } from "@/lib/utils";
 import { signIn } from "@/server/users";
-import { Badge } from "../ui/badge";
 
 const formSchema = z.object({
-  email: z.string().email(),
+  username: z.string().min(3),
   password: z.string().min(8),
 });
 
@@ -47,7 +46,7 @@ export function LoginForm({
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      email: "",
+      username: "",
       password: "",
     },
   });
@@ -62,7 +61,7 @@ export function LoginForm({
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
 
-    const { success, message } = await signIn(values.email, values.password);
+    const { success, message } = await signIn(values.username, values.password);
 
     if (success) {
       toast.success(message as string);
@@ -116,18 +115,18 @@ export function LoginForm({
                   <div className="grid gap-3">
                     <FormField
                       control={form.control}
-                      name="email"
+                      name="username"
                       render={({ field }) => (
                         <FormItem>
                           <div className="flex items-center justify-between">
-                            <FormLabel>Email</FormLabel>
+                            <FormLabel>Username</FormLabel>
 
                             {/* {lastMethod === "email" && (
                               <Badge className="text-[9px]">last used</Badge>
                             )} */}
                           </div>
                           <FormControl>
-                            <Input placeholder="m@example.com" {...field} />
+                            <Input placeholder="Example" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>

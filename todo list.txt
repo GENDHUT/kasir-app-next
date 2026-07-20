@@ -1,0 +1,31 @@
+implementasi 
+1. login -> admin & karyawan
+2. bebrapa fitur saja
+
+todo list
+1.buat 2 dashboard admin dan karyawan 
+2.buat filter
+3.buat agar admin bisa buka semua dashboard karyawan
+
+
+Admin ->
+1. menambah karyawan
+2. fitur stok : per akun karyawan
+	1.history penjualan perharinya/minggu/perbulan/pertahun
+	2.kedai= 2 karyawan , stok bakal kedai
+	3.stok perkedai 
+	4.crud menu -> 1 menu akan di setiap akun 
+	5.statistik setiap karyawan
+
+3. fitur karyawan
+	1.membuat pesanan
+	2.pembayaran
+	3.struk transaksi
+	4.statistik
+
+
+stok 
+1 kedai = 1 renceng milo(12)
+	1kg teh hijau
+	1kg thai tea 
+	dll

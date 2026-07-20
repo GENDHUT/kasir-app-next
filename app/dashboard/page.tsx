@@ -9,22 +9,17 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { getOrganizations } from "@/server/organizations";
-import { headers } from "next/headers";
-import { auth } from "@/lib/auth";
 import Image from "next/image";
+import { requireRole } from "@/server/permission";
+
 
 export default async function Dashboard() {
-  const organizations = await getOrganizations();
-
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
+  const user = await requireRole("ADMIN");
 
   return (
     <div className="flex h-screen flex-col items-center justify-center gap-2">
       <h1 className="text-3xl font-bold">
-        Halo, {session?.user.name}
+        Halo, {user.name} Role anda = {user.role}
       </h1>
       <Image
         src="/Photo_Pacarku.webp"

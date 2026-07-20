@@ -31,6 +31,7 @@ import { signUp } from "@/server/users";
 
 const formSchema = z.object({
   username: z.string().min(3),
+  name: z.string().min(3),
   email: z.string().email(),
   password: z.string().min(8),
 });
@@ -46,6 +47,7 @@ export function SignupForm({
     resolver: zodResolver(formSchema),
     defaultValues: {
       username: "",
+      name: "",
       email: "",
       password: "",
     },
@@ -62,14 +64,15 @@ export function SignupForm({
     setIsLoading(true);
 
     const { success, message } = await signUp(
+      values.username,
+      values.name,
       values.email,
-      values.password,
-      values.username
+      values.password
     );
 
     if (success) {
       toast.success(
-        `${message as string} Please check your email for verification.`
+        `${message as string} Anda sudah login.`
       );
       router.push("/dashboard");
     } else {
@@ -122,6 +125,19 @@ export function SignupForm({
                           <FormLabel>Username</FormLabel>
                           <FormControl>
                             <Input placeholder="shadcn" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="name"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Name</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Administrator" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
