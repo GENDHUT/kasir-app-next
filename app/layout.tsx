@@ -5,6 +5,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { Header } from "@/components/header";
 
+
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -37,7 +38,8 @@ export default function RootLayout({
           disableTransitionOnChange
           enableSystem
         >
-          <Header />
+        {/* <Header /> */}
+
           {children}
           <Toaster />
         </ThemeProvider>

@@ -1,5 +1,10 @@
 import { Logout } from "./logout";
 import { ModeSwitcher } from "./mode-switcher";
+import {
+  SidebarProvider,
+  SidebarInset,
+  SidebarTrigger,
+} from "@/components/ui/sidebar";
 
 export async function Header() {
 
@@ -8,6 +13,8 @@ export async function Header() {
       <div className="flex items-center gap-2">
         <Logout />
         <ModeSwitcher />
+        <SidebarTrigger />
+
       </div>
     </header>
   );

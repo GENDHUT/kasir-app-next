@@ -11,7 +11,6 @@ export default async function Home() {
   return (
     <>
       <header className="absolute top-0 right-0 flex items-center justify-end p-4">
-        <ModeSwitcher />
       </header>
       <div className="flex h-screen flex-col items-center justify-center gap-5 px-5 text-center">
         <Image

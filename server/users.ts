@@ -120,3 +120,25 @@ export const getUsers = async () => {
     return [];
   }
 };
+
+/*
+|--------------------------------------------------------------------------
+| Check Current Session
+|--------------------------------------------------------------------------
+*/
+
+export const getSessionUser = async () => {
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
+
+  if (!session) {
+    return null;
+  }
+
+  const currentUser = await db.query.user.findFirst({
+    where: eq(user.id, session.user.id),
+  });
+
+  return currentUser ?? null;
+};

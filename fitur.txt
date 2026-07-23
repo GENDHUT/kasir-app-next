@@ -1,0 +1,259 @@
+1. Dashboard
+Ringkasan penjualan hari ini
+Total omzet
+Total transaksi
+Produk terlaris
+Stok hampir habis
+Grafik penjualan harian, mingguan, bulanan
+Aktivitas kasir
+2. Manajemen Produk
+Tambah produk
+Edit produk
+Hapus produk
+Kategori produk
+Barcode
+SKU
+Harga beli
+Harga jual
+Foto produk
+Status aktif/nonaktif
+Varian produk (ukuran, warna, rasa)
+3. Kategori Produk
+Tambah kategori
+Edit kategori
+Hapus kategori
+
+Contoh:
+
+Minuman
+Makanan
+Snack
+Frozen Food
+Elektronik
+4. Manajemen Stok
+Stok masuk
+Stok keluar
+Penyesuaian stok (Stock Opname)
+Riwayat stok
+Minimum stok
+Notifikasi stok habis
+5. Supplier
+Data supplier
+Nomor telepon
+Email
+Alamat
+Produk dari supplier
+Riwayat pembelian
+6. Pembelian (Purchase)
+Buat pembelian
+Pilih supplier
+Barang masuk otomatis
+Cetak invoice pembelian
+Status pembayaran supplier
+7. Penjualan (Kasir)
+
+Fitur utama kasir:
+
+Cari produk
+Scan barcode
+Tambah ke keranjang
+Ubah jumlah
+Diskon
+Pajak
+Voucher
+Catatan transaksi
+Simpan transaksi
+Batalkan transaksi
+Hold transaksi
+Resume transaksi
+8. Pembayaran
+
+Metode pembayaran:
+
+Tunai
+QRIS
+Transfer
+Debit
+Kredit
+E-Wallet
+Split Payment
+
+Contoh:
+
+Total : 120.000
+
+Tunai : 50.000
+QRIS  : 70.000
+9. Cetak Struk
+
+Isi struk:
+
+Nama toko
+Alamat
+Nomor transaksi
+Kasir
+Daftar barang
+Qty
+Harga
+Total
+Diskon
+Pajak
+QR Code
+Terima kasih
+10. Customer
+Data pelanggan
+Nomor HP
+Email
+Alamat
+Poin
+Member
+Riwayat transaksi
+11. Membership
+Silver
+Gold
+Platinum
+
+Fitur:
+
+Poin
+Cashback
+Diskon khusus
+Voucher ulang tahun
+12. Promo
+Diskon produk
+Diskon kategori
+Buy 1 Get 1
+Voucher
+Happy Hour
+Flash Sale
+13. Retur
+Retur penjualan
+Retur pembelian
+Alasan retur
+Barang rusak
+Tukar barang
+14. Laporan
+Penjualan harian
+Penjualan bulanan
+Penjualan tahunan
+Produk terlaris
+Produk tidak laku
+Laba rugi
+Omzet
+Pajak
+Retur
+Kas masuk
+Kas keluar
+15. Pengeluaran (Expense)
+Listrik
+Air
+Internet
+Gaji
+Transport
+Operasional
+16. Manajemen Pengguna
+
+Role:
+
+Owner
+Admin
+Kasir
+Supervisor
+Gudang
+
+Hak akses berbeda untuk tiap peran.
+
+17. Shift Kasir
+Buka shift
+Tutup shift
+Modal awal
+Total transaksi
+Selisih kas
+Laporan shift
+18. Riwayat Aktivitas
+Login
+Logout
+Edit produk
+Hapus transaksi
+Retur
+Stock opname
+19. Pengaturan Toko
+Nama toko
+Logo
+Alamat
+Nomor HP
+Pajak
+Mata uang
+Printer
+Format struk
+20. Notifikasi
+Stok habis
+Produk kedaluwarsa
+Target penjualan
+Shift belum ditutup
+21. Barcode
+Generate barcode
+Scan barcode
+Print barcode
+22. Multi Cabang
+Cabang A
+Cabang B
+Cabang C
+
+Fitur:
+
+Transfer stok
+Laporan per cabang
+Kasir per cabang
+23. Integrasi
+Printer thermal
+Barcode scanner
+Cash drawer
+Timbangan digital
+QRIS
+24. Backup & Restore
+Backup database
+Restore database
+Export Excel
+Export PDF
+Import produk
+
+sidebar->
+📊 Dashboard
+
+🛒 Kasir
+
+📦 Produk
+   ├── Semua Produk
+   ├── Kategori
+   ├── Stok
+   └── Barcode
+
+🚚 Supplier
+
+📥 Pembelian
+
+📈 Penjualan
+
+🔄 Retur
+
+👥 Pelanggan
+
+🎁 Membership
+
+💰 Promo
+
+📊 Laporan
+   ├── Penjualan
+   ├── Pembelian
+   ├── Stok
+   ├── Laba Rugi
+   └── Pengeluaran
+
+💸 Pengeluaran
+
+👤 Pengguna
+
+🏢 Cabang
+
+⚙️ Pengaturan

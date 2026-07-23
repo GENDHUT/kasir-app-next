@@ -3,9 +3,17 @@ implementasi
 2. bebrapa fitur saja
 
 todo list
-1.buat 2 dashboard admin dan karyawan 
-2.buat filter
+1.buat 2 dashboard admin dan karyawan  ~
+2.buat filter ~
 3.buat agar admin bisa buka semua dashboard karyawan
+4.buat sidebar , lalu edit sesuai pemakaian
+(untuk sidebar)
+-isi paling awal adalah data karyawan
+-isi nya nama alamat toko dll
+-isi kedua fitur toko
+(fitur toko karyawan)
+
+-isi ketiga
 
 
 Admin ->
