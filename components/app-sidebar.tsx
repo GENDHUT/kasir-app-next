@@ -4,7 +4,6 @@
   import { SearchForm } from "@/components/search-form"
   import { VersionSwitcher } from "@/components/version-switcher"
   import { Logo } from "./logo"
-  import { Logout } from "./logout";
 
   import {
     Collapsible,
@@ -217,7 +216,6 @@
           ))}
         </SidebarContent>
         <SidebarFooter>
-          <Logout />
         </SidebarFooter>
         <SidebarRail />
       </Sidebar>

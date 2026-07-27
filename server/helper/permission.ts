@@ -13,6 +13,16 @@ export async function requireRole(...roles: Role[]) {
     return user;
 }
 
+export const requireAdmin = async () => {
+    const currentUser = await getCurrentUser();
+
+    if (currentUser.role !== "ADMIN") {
+        throw new Error("Anda tidak memiliki akses.");
+    }
+
+    return currentUser;
+};
+
 export async function redirectIfAuthenticated() {
     const user = await getSessionUser();
 

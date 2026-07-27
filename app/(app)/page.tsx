@@ -2,11 +2,11 @@ import Image from "next/image";
 import Link from "next/link";
 import { ModeSwitcher } from "@/components/mode-switcher";
 import { Button } from "@/components/ui/button";
-import { requireRole } from "@/server/permission";
+import { requireRole } from "@/server/helper/permission";
 
 
 export default async function Home() {
-  const user = await requireRole("ADMIN" , "EMPLOYEE");
+  const user = await requireRole("ADMIN", "EMPLOYEE");
 
   return (
     <>

@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { SignupForm } from "@/components/forms/signup-form";
-import { requireRole } from "@/server/permission";
+import { requireRole } from "@/server/helper/permission";
 
 
 export default async function SignupPage() {

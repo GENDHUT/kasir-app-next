@@ -39,3 +39,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# folder dan sampah
+/public/menus/
+/migrations/
+fitur.txt
+todolist.txt

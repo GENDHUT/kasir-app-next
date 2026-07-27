@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { LoginForm } from "@/components/forms/login-form";
-import { redirectIfAuthenticated } from "@/server/permission";
+import { redirectIfAuthenticated } from "@/server/helper/permission";
 
 
 export default async function LoginPage() {
