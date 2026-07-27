@@ -2,12 +2,16 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Plus, Search, Trash2 } from "lucide-react";
+
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
+
 import type { Variant } from "@/db/schema";
+
 import { getMenuVariantsForReuse } from "@/server/variant";
+
 import { AddMasterVariantDialog } from "./add-master-variant-dialog";
 
 export interface SelectedVariant {
@@ -44,10 +48,9 @@ export function VariantList({
     selectedVariants,
     onChange,
 }: Props) {
-    const [masterVariants, setMasterVariants] =
-        useState<Variant[]>(
-            initialMasterVariants
-        );
+    const [masterVariants, setMasterVariants] = useState<Variant[]>(
+        initialMasterVariants
+    );
 
     const [reusableMenuVariants, setReusableMenuVariants] =
         useState<ReusableMenuVariant[]>([]);
@@ -55,20 +58,11 @@ export function VariantList({
     const [loadingReusableVariants, setLoadingReusableVariants] =
         useState(true);
 
-    const [search, setSearch] =
-        useState("");
-
-    const [selectedVariantId, setSelectedVariantId] =
-        useState("");
-
-    const [price, setPrice] =
-        useState("");
-
-    const [selectedReusableId, setSelectedReusableId] =
-        useState("");
-
-    const [addVariantOpen, setAddVariantOpen] =
-        useState(false);
+    const [search, setSearch] = useState("");
+    const [selectedVariantId, setSelectedVariantId] = useState("");
+    const [price, setPrice] = useState("");
+    const [selectedReusableId, setSelectedReusableId] = useState("");
+    const [addVariantOpen, setAddVariantOpen] = useState(false);
 
     /*
     |--------------------------------------------------------------------------
@@ -81,12 +75,9 @@ export function VariantList({
             try {
                 setLoadingReusableVariants(true);
 
-                const data =
-                    await getMenuVariantsForReuse();
+                const data = await getMenuVariantsForReuse();
 
-                setReusableMenuVariants(
-                    data as ReusableMenuVariant[]
-                );
+                setReusableMenuVariants(data as ReusableMenuVariant[]);
             } catch (error) {
                 console.error(
                     "Gagal mengambil variant yang dapat digunakan kembali:",
@@ -123,13 +114,7 @@ export function VariantList({
     */
 
     const selectedVariantIds = useMemo(
-        () =>
-            new Set(
-                selectedVariants.map(
-                    (item) =>
-                        item.variantId
-                )
-            ),
+        () => new Set(selectedVariants.map((item) => item.variantId)),
         [selectedVariants]
     );
 
@@ -139,32 +124,17 @@ export function VariantList({
     |--------------------------------------------------------------------------
     */
 
-    const availableMasterVariants =
-        useMemo(() => {
-            const keyword =
-                search
-                    .trim()
-                    .toLowerCase();
+    const availableMasterVariants = useMemo(() => {
+        const keyword = search.trim().toLowerCase();
 
-            return masterVariants
-                .filter(
-                    (item) =>
-                        !selectedVariantIds.has(
-                            item.id
-                        )
-                )
-                .filter(
-                    (item) =>
-                        !keyword ||
-                        item.name
-                            .toLowerCase()
-                            .includes(keyword)
-                );
-        }, [
-            masterVariants,
-            selectedVariantIds,
-            search,
-        ]);
+        return masterVariants
+            .filter((item) => !selectedVariantIds.has(item.id))
+            .filter(
+                (item) =>
+                    !keyword ||
+                    item.name.toLowerCase().includes(keyword)
+            );
+    }, [masterVariants, selectedVariantIds, search]);
 
     /*
     |--------------------------------------------------------------------------
@@ -177,80 +147,38 @@ export function VariantList({
     |--------------------------------------------------------------------------
     */
 
-    const availableReusableVariants =
-        useMemo(() => {
-            const keyword =
-                search
-                    .trim()
-                    .toLowerCase();
+    const availableReusableVariants = useMemo(() => {
+        const keyword = search.trim().toLowerCase();
 
-            const uniqueMap =
-                new Map<
-                    string,
-                    ReusableMenuVariant
-                >();
+        const uniqueMap = new Map<string, ReusableMenuVariant>();
 
-            for (
-                const item
-                of reusableMenuVariants
-            ) {
-                if (
-                    selectedVariantIds.has(
-                        item.variantId
-                    )
-                ) {
-                    continue;
-                }
-
-                const key =
-                    `${item.variantId}-${item.price}`;
-
-                if (
-                    !uniqueMap.has(key)
-                ) {
-                    uniqueMap.set(
-                        key,
-                        item
-                    );
-                }
+        for (const item of reusableMenuVariants) {
+            if (selectedVariantIds.has(item.variantId)) {
+                continue;
             }
 
-            return Array.from(
-                uniqueMap.values()
-            ).filter(
-                (item) => {
-                    if (!keyword) {
-                        return true;
-                    }
+            const key = `${item.variantId}-${item.price}`;
 
-                    const variantName =
-                        item.variant.name
-                            .toLowerCase();
+            if (!uniqueMap.has(key)) {
+                uniqueMap.set(key, item);
+            }
+        }
 
-                    const menuName =
-                        item.menu.name
-                            .toLowerCase();
+        return Array.from(uniqueMap.values()).filter((item) => {
+            if (!keyword) {
+                return true;
+            }
 
-                    return (
-                        variantName.includes(
-                            keyword
-                        ) ||
-                        menuName.includes(
-                            keyword
-                        ) ||
-                        item.price
-                            .toString()
-                            .includes(
-                                keyword
-                            )
-                    );
-                }
+            const variantName = item.variant.name.toLowerCase();
+            const menuName = item.menu.name.toLowerCase();
+
+            return (
+                variantName.includes(keyword) ||
+                menuName.includes(keyword) ||
+                item.price.toString().includes(keyword)
             );
-        }, [
-            reusableMenuVariants,
-            selectedVariantIds,
-            search,
-        ]);
+        });
+    }, [reusableMenuVariants, selectedVariantIds, search]);
 
     /*
     |--------------------------------------------------------------------------
@@ -258,12 +186,9 @@ export function VariantList({
     |--------------------------------------------------------------------------
     */
 
-    const selectedMasterVariant =
-        masterVariants.find(
-            (item) =>
-                item.id ===
-                selectedVariantId
-        );
+    const selectedMasterVariant = masterVariants.find(
+        (item) => item.id === selectedVariantId
+    );
 
     /*
     |--------------------------------------------------------------------------
@@ -272,75 +197,36 @@ export function VariantList({
     */
 
     function handleAddVariant() {
-        if (
-            !selectedMasterVariant
-        ) {
-            alert(
-                "Silakan pilih variant."
-            );
-
+        if (!selectedMasterVariant) {
+            alert("Silakan pilih variant.");
             return;
         }
 
-        const numericPrice =
-            Number(price);
+        const numericPrice = Number(price);
 
-        if (
-            !price.trim()
-        ) {
-            alert(
-                "Harga variant wajib diisi."
-            );
-
+        if (!price.trim()) {
+            alert("Harga variant wajib diisi.");
             return;
         }
 
-        if (
-            !Number.isFinite(
-                numericPrice
-            ) ||
-            numericPrice <= 0
-        ) {
-            alert(
-                "Harga variant harus lebih dari 0."
-            );
-
+        if (!Number.isFinite(numericPrice) || numericPrice <= 0) {
+            alert("Harga variant harus lebih dari 0.");
             return;
         }
 
-        if (
-            selectedVariantIds.has(
-                selectedMasterVariant.id
-            )
-        ) {
-            alert(
-                "Variant sudah digunakan pada menu ini."
-            );
-
+        if (selectedVariantIds.has(selectedMasterVariant.id)) {
+            alert("Variant sudah digunakan pada menu ini.");
             return;
         }
 
-        const newVariant:
-            SelectedVariant = {
-            variantId:
-                selectedMasterVariant.id,
-
-            price:
-                Math.round(
-                    numericPrice
-                ),
-
-            available:
-                true,
-
-            sortOrder:
-                selectedVariants.length,
+        const newVariant: SelectedVariant = {
+            variantId: selectedMasterVariant.id,
+            price: Math.round(numericPrice),
+            available: true,
+            sortOrder: selectedVariants.length,
         };
 
-        onChange([
-            ...selectedVariants,
-            newVariant,
-        ]);
+        onChange([...selectedVariants, newVariant]);
 
         setSelectedVariantId("");
         setPrice("");
@@ -374,52 +260,28 @@ export function VariantList({
     */
 
     function handleReuseVariant() {
-        const reusable =
-            reusableMenuVariants.find(
-                (item) =>
-                    item.id ===
-                    selectedReusableId
-            );
+        const reusable = reusableMenuVariants.find(
+            (item) => item.id === selectedReusableId
+        );
 
         if (!reusable) {
-            alert(
-                "Silakan pilih variant dan harga yang ingin digunakan."
-            );
-
+            alert("Silakan pilih variant dan harga yang ingin digunakan.");
             return;
         }
 
-        if (
-            selectedVariantIds.has(
-                reusable.variantId
-            )
-        ) {
-            alert(
-                "Variant tersebut sudah digunakan pada menu ini."
-            );
-
+        if (selectedVariantIds.has(reusable.variantId)) {
+            alert("Variant tersebut sudah digunakan pada menu ini.");
             return;
         }
 
-        const newVariant:
-            SelectedVariant = {
-            variantId:
-                reusable.variantId,
-
-            price:
-                reusable.price,
-
-            available:
-                true,
-
-            sortOrder:
-                selectedVariants.length,
+        const newVariant: SelectedVariant = {
+            variantId: reusable.variantId,
+            price: reusable.price,
+            available: true,
+            sortOrder: selectedVariants.length,
         };
 
-        onChange([
-            ...selectedVariants,
-            newVariant,
-        ]);
+        onChange([...selectedVariants, newVariant]);
 
         setSelectedReusableId("");
         setSearch("");
@@ -431,46 +293,27 @@ export function VariantList({
     |--------------------------------------------------------------------------
     */
 
-    function handleRemoveVariant(
-        variantId: string
-    ) {
-        const masterVariant =
-            masterVariants.find(
-                (item) =>
-                    item.id ===
-                    variantId
-            );
+    function handleRemoveVariant(variantId: string) {
+        const masterVariant = masterVariants.find(
+            (item) => item.id === variantId
+        );
 
-        const confirmed =
-            window.confirm(
-                `Apakah kamu yakin ingin menghapus variant "${masterVariant?.name ?? "ini"}" dari menu?`
-            );
+        const confirmed = window.confirm(
+            `Apakah kamu yakin ingin menghapus variant "${masterVariant?.name ?? "ini"}" dari menu?`
+        );
 
         if (!confirmed) {
             return;
         }
 
-        const updatedVariants =
-            selectedVariants
-                .filter(
-                    (item) =>
-                        item.variantId !==
-                        variantId
-                )
-                .map(
-                    (
-                        item,
-                        index
-                    ) => ({
-                        ...item,
-                        sortOrder:
-                            index,
-                    })
-                );
+        const updatedVariants = selectedVariants
+            .filter((item) => item.variantId !== variantId)
+            .map((item, index) => ({
+                ...item,
+                sortOrder: index,
+            }));
 
-        onChange(
-            updatedVariants
-        );
+        onChange(updatedVariants);
     }
 
     /*
@@ -479,31 +322,19 @@ export function VariantList({
     |--------------------------------------------------------------------------
     */
 
-    function handleUpdatePrice(
-        variantId: string,
-        value: string
-    ) {
-        const numericValue =
-            Number(value);
+    function handleUpdatePrice(variantId: string, value: string) {
+        const numericValue = Number(value);
 
-        const updatedVariants =
-            selectedVariants.map(
-                (item) =>
-                    item.variantId ===
-                        variantId
-                        ? {
-                            ...item,
-                            price:
-                                value === ""
-                                    ? 0
-                                    : numericValue,
-                        }
-                        : item
-            );
-
-        onChange(
-            updatedVariants
+        const updatedVariants = selectedVariants.map((item) =>
+            item.variantId === variantId
+                ? {
+                    ...item,
+                    price: value === "" ? 0 : numericValue,
+                }
+                : item
         );
+
+        onChange(updatedVariants);
     }
 
     /*
@@ -516,21 +347,16 @@ export function VariantList({
         variantId: string,
         available: boolean
     ) {
-        const updatedVariants =
-            selectedVariants.map(
-                (item) =>
-                    item.variantId ===
-                        variantId
-                        ? {
-                            ...item,
-                            available,
-                        }
-                        : item
-            );
-
-        onChange(
-            updatedVariants
+        const updatedVariants = selectedVariants.map((item) =>
+            item.variantId === variantId
+                ? {
+                    ...item,
+                    available,
+                }
+                : item
         );
+
+        onChange(updatedVariants);
     }
 
     /*
@@ -539,65 +365,42 @@ export function VariantList({
     |--------------------------------------------------------------------------
     */
 
-    function handleMasterVariantsCreated(
-        newVariants: Variant[]
-    ) {
-        setMasterVariants(
-            (previous) => {
-                const existingIds =
-                    new Set(
-                        previous.map(
-                            (item) =>
-                                item.id
-                        )
-                    );
+    function handleMasterVariantsCreated(newVariants: Variant[]) {
+        setMasterVariants((previous) => {
+            const existingIds = new Set(
+                previous.map((item) => item.id)
+            );
 
-                const uniqueNewVariants =
-                    newVariants.filter(
-                        (item) =>
-                            !existingIds.has(
-                                item.id
-                            )
-                    );
+            const uniqueNewVariants = newVariants.filter(
+                (item) => !existingIds.has(item.id)
+            );
 
-                return [
-                    ...previous,
-                    ...uniqueNewVariants,
-                ];
-            }
-        );
+            return [...previous, ...uniqueNewVariants];
+        });
 
         /*
-        |----------------------------------------------------------------------
+        |--------------------------------------------------------------------------
         | Jika hanya membuat satu variant baru,
         | otomatis pilih variant tersebut.
-        |----------------------------------------------------------------------
+        |--------------------------------------------------------------------------
         */
 
-        if (
-            newVariants.length === 1
-        ) {
-            const newVariant =
-                newVariants[0];
+        if (newVariants.length === 1) {
+            const newVariant = newVariants[0];
 
             if (newVariant) {
-                setSelectedVariantId(
-                    newVariant.id
-                );
+                setSelectedVariantId(newVariant.id);
             }
         }
     }
 
     return (
         <div className="min-w-0 space-y-5">
-
             {/* HEADER */}
 
             <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div className="min-w-0">
-                    <h3 className="font-semibold">
-                        Variant Menu
-                    </h3>
+                    <h3 className="font-semibold">Variant Menu</h3>
 
                     <p className="text-sm text-muted-foreground">
                         Gunakan variant yang sudah pernah dipakai atau tambahkan master variant baru.
@@ -609,11 +412,7 @@ export function VariantList({
                     variant="outline"
                     size="sm"
                     className="shrink-0"
-                    onClick={() =>
-                        setAddVariantOpen(
-                            true
-                        )
-                    }
+                    onClick={() => setAddVariantOpen(true)}
                 >
                     <Plus className="mr-2 h-4 w-4" />
                     Tambah Variant
@@ -628,13 +427,7 @@ export function VariantList({
                 <Input
                     placeholder="Cari variant atau harga..."
                     value={search}
-                    onChange={(
-                        event
-                    ) =>
-                        setSearch(
-                            event.target.value
-                        )
-                    }
+                    onChange={(event) => setSearch(event.target.value)}
                     className="w-full min-w-0 pl-9"
                 />
             </div>
@@ -668,67 +461,56 @@ export function VariantList({
                     </div>
                 ) : (
                     <div className="grid min-w-0 gap-2">
-                        {availableReusableVariants.map(
-                            (item) => {
-                                const isSelected =
-                                    selectedReusableId ===
-                                    item.id;
+                        {availableReusableVariants.map((item) => {
+                            const isSelected =
+                                selectedReusableId === item.id;
 
-                                return (
-                                    <button
-                                        key={`${item.variantId}-${item.price}`}
-                                        type="button"
-                                        onClick={() =>
-                                            setSelectedReusableId(
-                                                isSelected
-                                                    ? ""
-                                                    : item.id
-                                            )
-                                        }
-                                        className={`flex min-w-0 items-center justify-between gap-4 rounded-md border p-3 text-left transition hover:bg-muted ${isSelected
-                                                ? "border-primary bg-muted"
-                                                : ""
-                                            }`}
-                                    >
-                                        <div className="min-w-0">
-                                            <p className="break-words font-medium">
-                                                {item.variant.name}
-                                            </p>
+                            return (
+                                <button
+                                    key={`${item.variantId}-${item.price}`}
+                                    type="button"
+                                    onClick={() =>
+                                        setSelectedReusableId(
+                                            isSelected ? "" : item.id
+                                        )
+                                    }
+                                    className={`flex min-w-0 items-center justify-between gap-4 rounded-md border p-3 text-left transition hover:bg-muted ${isSelected
+                                            ? "border-primary bg-muted"
+                                            : ""
+                                        }`}
+                                >
+                                    <div className="min-w-0">
+                                        <p className="break-words font-medium">
+                                            {item.variant.name}
+                                        </p>
 
-                                            <p className="text-xs text-muted-foreground">
-                                                Pernah digunakan oleh:{" "}
-                                                {item.menu.name}
-                                            </p>
-                                        </div>
+                                        <p className="text-xs text-muted-foreground">
+                                            Pernah digunakan oleh:{" "}
+                                            {item.menu.name}
+                                        </p>
+                                    </div>
 
-                                        <div className="flex shrink-0 items-center gap-3">
-                                            <span className="text-sm font-semibold">
-                                                Rp{" "}
-                                                {item.price.toLocaleString(
-                                                    "id-ID"
-                                                )}
-                                            </span>
-
-                                            {isSelected && (
-                                                <Badge>
-                                                    Dipilih
-                                                </Badge>
+                                    <div className="flex shrink-0 items-center gap-3">
+                                        <span className="text-sm font-semibold">
+                                            Rp{" "}
+                                            {item.price.toLocaleString(
+                                                "id-ID"
                                             )}
-                                        </div>
-                                    </button>
-                                );
-                            }
-                        )}
+                                        </span>
+
+                                        {isSelected && (
+                                            <Badge>Dipilih</Badge>
+                                        )}
+                                    </div>
+                                </button>
+                            );
+                        })}
 
                         <Button
                             type="button"
                             className="mt-2 w-full"
-                            disabled={
-                                !selectedReusableId
-                            }
-                            onClick={
-                                handleReuseVariant
-                            }
+                            disabled={!selectedReusableId}
+                            onClick={handleReuseVariant}
                         >
                             <Plus className="mr-2 h-4 w-4" />
                             Gunakan Variant Terpilih
@@ -751,42 +533,22 @@ export function VariantList({
                 </div>
 
                 <div className="grid min-w-0 gap-3 md:grid-cols-[minmax(0,1fr)_160px_auto]">
-
                     {/* VARIANT SELECT */}
 
                     <select
                         className="h-10 w-full min-w-0 rounded-md border bg-background px-3 text-sm"
-                        value={
-                            selectedVariantId
-                        }
-                        onChange={(
-                            event
-                        ) =>
-                            setSelectedVariantId(
-                                event.target.value
-                            )
+                        value={selectedVariantId}
+                        onChange={(event) =>
+                            setSelectedVariantId(event.target.value)
                         }
                     >
-                        <option value="">
-                            Pilih Variant
-                        </option>
+                        <option value="">Pilih Variant</option>
 
-                        {availableMasterVariants.map(
-                            (item) => (
-                                <option
-                                    key={
-                                        item.id
-                                    }
-                                    value={
-                                        item.id
-                                    }
-                                >
-                                    {
-                                        item.name
-                                    }
-                                </option>
-                            )
-                        )}
+                        {availableMasterVariants.map((item) => (
+                            <option key={item.id} value={item.id}>
+                                {item.name}
+                            </option>
+                        ))}
                     </select>
 
                     {/* PRICE */}
@@ -796,12 +558,8 @@ export function VariantList({
                         min="1"
                         placeholder="Harga"
                         value={price}
-                        onChange={(
-                            event
-                        ) =>
-                            setPrice(
-                                event.target.value
-                            )
+                        onChange={(event) =>
+                            setPrice(event.target.value)
                         }
                         className="w-full min-w-0"
                     />
@@ -811,9 +569,7 @@ export function VariantList({
                     <Button
                         type="button"
                         className="shrink-0"
-                        onClick={
-                            handleAddVariant
-                        }
+                        onClick={handleAddVariant}
                     >
                         <Plus className="mr-2 h-4 w-4" />
                         Tambah
@@ -836,7 +592,6 @@ export function VariantList({
             {/* SELECTED VARIANTS */}
 
             <div className="min-w-0 space-y-3">
-
                 <div>
                     <h3 className="text-sm font-semibold">
                         Variant Menu Ini
@@ -858,136 +613,107 @@ export function VariantList({
                         </p>
                     </div>
                 ) : (
-                    selectedVariants.map(
-                        (
-                            selectedVariant
-                        ) => {
-                            const masterVariant =
-                                masterVariants.find(
-                                    (
-                                        item
-                                    ) =>
-                                        item.id ===
-                                        selectedVariant.variantId
-                                );
+                    selectedVariants.map((selectedVariant) => {
+                        const masterVariant = masterVariants.find(
+                            (item) =>
+                                item.id === selectedVariant.variantId
+                        );
 
-                            if (
-                                !masterVariant
-                            ) {
-                                return null;
-                            }
+                        if (!masterVariant) {
+                            return null;
+                        }
 
-                            return (
-                                <div
-                                    key={
-                                        selectedVariant.variantId
-                                    }
-                                    className="min-w-0 rounded-lg border p-4"
-                                >
-                                    <div className="flex min-w-0 items-start justify-between gap-4">
-
-                                        <div className="min-w-0">
-                                            <div className="flex min-w-0 flex-wrap items-center gap-2">
-                                                <p className="break-words font-medium">
-                                                    {
-                                                        masterVariant.name
-                                                    }
-                                                </p>
-
-                                                {selectedVariant.available ? (
-                                                    <Badge className="shrink-0">
-                                                        Tersedia
-                                                    </Badge>
-                                                ) : (
-                                                    <Badge
-                                                        variant="secondary"
-                                                        className="shrink-0"
-                                                    >
-                                                        Tidak tersedia
-                                                    </Badge>
-                                                )}
-                                            </div>
-
-                                            <p className="mt-1 text-xs text-muted-foreground">
-                                                Master Variant
+                        return (
+                            <div
+                                key={selectedVariant.variantId}
+                                className="min-w-0 rounded-lg border p-4"
+                            >
+                                <div className="flex min-w-0 items-start justify-between gap-4">
+                                    <div className="min-w-0">
+                                        <div className="flex min-w-0 flex-wrap items-center gap-2">
+                                            <p className="break-words font-medium">
+                                                {masterVariant.name}
                                             </p>
+
+                                            {selectedVariant.available ? (
+                                                <Badge className="shrink-0">
+                                                    Tersedia
+                                                </Badge>
+                                            ) : (
+                                                <Badge
+                                                    variant="secondary"
+                                                    className="shrink-0"
+                                                >
+                                                    Tidak tersedia
+                                                </Badge>
+                                            )}
                                         </div>
 
-                                        <div className="flex shrink-0 items-center gap-2">
-
-                                            <Switch
-                                                checked={
-                                                    selectedVariant.available
-                                                }
-                                                onCheckedChange={(
-                                                    checked
-                                                ) =>
-                                                    handleToggleAvailable(
-                                                        selectedVariant.variantId,
-                                                        checked
-                                                    )
-                                                }
-                                            />
-
-                                            <Button
-                                                type="button"
-                                                size="icon"
-                                                variant="ghost"
-                                                onClick={() =>
-                                                    handleRemoveVariant(
-                                                        selectedVariant.variantId
-                                                    )
-                                                }
-                                            >
-                                                <Trash2 className="h-4 w-4" />
-                                            </Button>
-
-                                        </div>
+                                        <p className="mt-1 text-xs text-muted-foreground">
+                                            Master Variant
+                                        </p>
                                     </div>
 
-                                    {/* PRICE */}
-
-                                    <div className="mt-3 min-w-0 space-y-2">
-                                        <p className="text-sm font-medium">
-                                            Harga Variant
-                                        </p>
-
-                                        <Input
-                                            type="number"
-                                            min="1"
-                                            value={
-                                                selectedVariant.price
+                                    <div className="flex shrink-0 items-center gap-2">
+                                        <Switch
+                                            checked={
+                                                selectedVariant.available
                                             }
-                                            onChange={(
-                                                event
-                                            ) =>
-                                                handleUpdatePrice(
+                                            onCheckedChange={(checked) =>
+                                                handleToggleAvailable(
                                                     selectedVariant.variantId,
-                                                    event.target.value
+                                                    checked
                                                 )
                                             }
-                                            className="w-full min-w-0"
                                         />
+
+                                        <Button
+                                            type="button"
+                                            size="icon"
+                                            variant="ghost"
+                                            onClick={() =>
+                                                handleRemoveVariant(
+                                                    selectedVariant.variantId
+                                                )
+                                            }
+                                        >
+                                            <Trash2 className="h-4 w-4" />
+                                        </Button>
                                     </div>
                                 </div>
-                            );
-                        }
-                    )
+
+                                {/* PRICE */}
+
+                                <div className="mt-3 min-w-0 space-y-2">
+                                    <p className="text-sm font-medium">
+                                        Harga Variant
+                                    </p>
+
+                                    <Input
+                                        type="number"
+                                        min="1"
+                                        value={selectedVariant.price}
+                                        onChange={(event) =>
+                                            handleUpdatePrice(
+                                                selectedVariant.variantId,
+                                                event.target.value
+                                            )
+                                        }
+                                        className="w-full min-w-0"
+                                    />
+                                </div>
+                            </div>
+                        );
+                    })
                 )}
             </div>
 
             {/* ADD MASTER VARIANT */}
 
             <AddMasterVariantDialog
-                open={
-                    addVariantOpen
-                }
-                onOpenChange={
-                    setAddVariantOpen
-                }
-                onSuccess={
-                    handleMasterVariantsCreated
-                }
+                open={addVariantOpen}
+                onOpenChange={setAddVariantOpen}
+                onSuccess={handleMasterVariantsCreated}
             />
         </div>
     );

@@ -7,29 +7,13 @@ import {
     useState,
 } from "react";
 
-import {
-    Input,
-} from "@/components/ui/input";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 
-import {
-    Label,
-} from "@/components/ui/label";
-
-import {
-    Textarea,
-} from "@/components/ui/textarea";
-
-import {
-    Button,
-} from "@/components/ui/button";
-
-import {
-    Switch,
-} from "@/components/ui/switch";
-
-import {
-    CategorySearch,
-} from "./category-search";
+import { CategorySearch } from "./category-search";
 
 import {
     EditMenuVariantList,
@@ -42,10 +26,7 @@ import type {
     Variant,
 } from "@/db/schema";
 
-import {
-    updateMenu,
-} from "@/server/menu";
-
+import { updateMenu } from "@/server/menu";
 
 /*
 |--------------------------------------------------------------------------
@@ -66,33 +47,20 @@ import {
 */
 
 interface MenuWithRelations extends Menu {
-
     category: Category;
 
     menuVariants: Array<{
-
         id: string;
-
         menuId: string;
-
         variantId: string;
-
         price: number;
-
         available: boolean;
-
         sortOrder: number;
-
         createdAt: Date;
-
         updatedAt: Date;
-
         variant: Variant;
-
     }>;
-
 }
-
 
 /*
 |--------------------------------------------------------------------------
@@ -119,31 +87,20 @@ interface MenuWithRelations extends Menu {
 */
 
 interface ReusableMenuVariant {
-
     id: string;
-
     variantId: string;
-
     price: number;
 
     variant: {
-
         id: string;
-
         name: string;
-
     };
 
     menu: {
-
         id: string;
-
         name: string;
-
     };
-
 }
-
 
 /*
 |--------------------------------------------------------------------------
@@ -152,11 +109,8 @@ interface ReusableMenuVariant {
 */
 
 interface Props {
-
     menu: MenuWithRelations;
-
     categories: Category[];
-
     variants: Variant[];
 
     /*
@@ -175,11 +129,8 @@ interface Props {
     reusableMenuVariants?: ReusableMenuVariant[];
 
     onSuccess?: () => void;
-
     onCancel?: () => void;
-
 }
-
 
 /*
 |--------------------------------------------------------------------------
@@ -188,11 +139,8 @@ interface Props {
 */
 
 export function EditMenuForm({
-
     menu,
-
     categories,
-
     variants,
 
     /*
@@ -213,21 +161,15 @@ export function EditMenuForm({
     reusableMenuVariants = [],
 
     onSuccess,
-
     onCancel,
-
 }: Props) {
-
-
     /*
     |--------------------------------------------------------------------------
     | FORM REF
     |--------------------------------------------------------------------------
     */
 
-    const formRef =
-        useRef<HTMLFormElement>(null);
-
+    const formRef = useRef<HTMLFormElement>(null);
 
     /*
     |--------------------------------------------------------------------------
@@ -235,18 +177,9 @@ export function EditMenuForm({
     |--------------------------------------------------------------------------
     */
 
-    const [
-
-        selectedCategory,
-
-        setSelectedCategory,
-
-    ] = useState<Category | null>(
-
+    const [selectedCategory, setSelectedCategory] = useState<Category | null>(
         menu.category ?? null
-
     );
-
 
     /*
     |--------------------------------------------------------------------------
@@ -254,18 +187,7 @@ export function EditMenuForm({
     |--------------------------------------------------------------------------
     */
 
-    const [
-
-        name,
-
-        setName,
-
-    ] = useState(
-
-        menu.name ?? ""
-
-    );
-
+    const [name, setName] = useState(menu.name ?? "");
 
     /*
     |--------------------------------------------------------------------------
@@ -273,18 +195,9 @@ export function EditMenuForm({
     |--------------------------------------------------------------------------
     */
 
-    const [
-
-        description,
-
-        setDescription,
-
-    ] = useState(
-
+    const [description, setDescription] = useState(
         menu.description ?? ""
-
     );
-
 
     /*
     |--------------------------------------------------------------------------
@@ -292,22 +205,9 @@ export function EditMenuForm({
     |--------------------------------------------------------------------------
     */
 
-    const [
-
-        available,
-
-        setAvailable,
-
-    ] = useState(
-
-        Boolean(
-
-            menu.available
-
-        )
-
+    const [available, setAvailable] = useState(
+        Boolean(menu.available)
     );
-
 
     /*
     |--------------------------------------------------------------------------
@@ -323,18 +223,7 @@ export function EditMenuForm({
     |--------------------------------------------------------------------------
     */
 
-    const [
-
-        imageFile,
-
-        setImageFile,
-
-    ] = useState<File | null>(
-
-        null
-
-    );
-
+    const [imageFile, setImageFile] = useState<File | null>(null);
 
     /*
     |--------------------------------------------------------------------------
@@ -348,18 +237,9 @@ export function EditMenuForm({
     |--------------------------------------------------------------------------
     */
 
-    const [
-
-        menuVariants,
-
-        setMenuVariants,
-
-    ] = useState<EditSelectedVariant[]>(
-
-        []
-
-    );
-
+    const [menuVariants, setMenuVariants] = useState<
+        EditSelectedVariant[]
+    >([]);
 
     /*
     |--------------------------------------------------------------------------
@@ -367,14 +247,7 @@ export function EditMenuForm({
     |--------------------------------------------------------------------------
     */
 
-    const [
-
-        loading,
-
-        setLoading,
-
-    ] = useState(false);
-
+    const [loading, setLoading] = useState(false);
 
     /*
     |--------------------------------------------------------------------------
@@ -393,71 +266,19 @@ export function EditMenuForm({
     */
 
     useEffect(() => {
+        const initialVariants: EditSelectedVariant[] = [
+            ...(menu.menuVariants ?? []),
+        ]
+            .sort((a, b) => a.sortOrder - b.sortOrder)
+            .map((item) => ({
+                variantId: item.variantId,
+                price: Number(item.price),
+                available: Boolean(item.available),
+                sortOrder: item.sortOrder,
+            }));
 
-        const initialVariants:
-            EditSelectedVariant[] =
-
-            [...(
-
-                menu.menuVariants ?? []
-
-            )]
-
-                .sort(
-
-                    (a, b) =>
-
-                        a.sortOrder -
-
-                        b.sortOrder
-
-                )
-
-                .map(
-
-                    (item) => ({
-
-                        variantId:
-
-                            item.variantId,
-
-                        price:
-
-                            Number(
-
-                                item.price
-
-                            ),
-
-                        available:
-
-                            Boolean(
-
-                                item.available
-
-                            ),
-
-                        sortOrder:
-
-                            item.sortOrder,
-
-                    })
-
-                );
-
-
-        setMenuVariants(
-
-            initialVariants
-
-        );
-
-    }, [
-
-        menu.menuVariants,
-
-    ]);
-
+        setMenuVariants(initialVariants);
+    }, [menu.menuVariants]);
 
     /*
     |--------------------------------------------------------------------------
@@ -466,26 +287,12 @@ export function EditMenuForm({
     */
 
     function handleImageChange(
-
         event: React.ChangeEvent<HTMLInputElement>
-
     ) {
+        const file = event.target.files?.[0] ?? null;
 
-        const file =
-
-            event.target.files?.[0] ??
-
-            null;
-
-
-        setImageFile(
-
-            file
-
-        );
-
+        setImageFile(file);
     }
-
 
     /*
     |--------------------------------------------------------------------------
@@ -494,13 +301,9 @@ export function EditMenuForm({
     */
 
     async function handleSubmit(
-
         event: FormEvent<HTMLFormElement>
-
     ) {
-
         event.preventDefault();
-
 
         /*
         |--------------------------------------------------------------------------
@@ -509,17 +312,9 @@ export function EditMenuForm({
         */
 
         if (!selectedCategory) {
-
-            alert(
-
-                "Silakan pilih kategori menu."
-
-            );
-
+            alert("Silakan pilih kategori menu.");
             return;
-
         }
-
 
         /*
         |--------------------------------------------------------------------------
@@ -527,23 +322,12 @@ export function EditMenuForm({
         |--------------------------------------------------------------------------
         */
 
-        const cleanName =
-
-            name.trim();
-
+        const cleanName = name.trim();
 
         if (!cleanName) {
-
-            alert(
-
-                "Nama menu wajib diisi."
-
-            );
-
+            alert("Nama menu wajib diisi.");
             return;
-
         }
-
 
         /*
         |--------------------------------------------------------------------------
@@ -551,22 +335,10 @@ export function EditMenuForm({
         |--------------------------------------------------------------------------
         */
 
-        if (
-
-            menuVariants.length === 0
-
-        ) {
-
-            alert(
-
-                "Menu harus memiliki minimal satu variant."
-
-            );
-
+        if (menuVariants.length === 0) {
+            alert("Menu harus memiliki minimal satu variant.");
             return;
-
         }
-
 
         /*
         |--------------------------------------------------------------------------
@@ -574,50 +346,19 @@ export function EditMenuForm({
         |--------------------------------------------------------------------------
         */
 
-        const invalidVariant =
+        const invalidVariant = menuVariants.find((item) => {
+            const numericPrice = Number(item.price);
 
-            menuVariants.find(
-
-                (item) => {
-
-                    const numericPrice =
-
-                        Number(
-
-                            item.price
-
-                        );
-
-
-                    return (
-
-                        !Number.isFinite(
-
-                            numericPrice
-
-                        ) ||
-
-                        numericPrice <= 0
-
-                    );
-
-                }
-
+            return (
+                !Number.isFinite(numericPrice) ||
+                numericPrice <= 0
             );
-
+        });
 
         if (invalidVariant) {
-
-            alert(
-
-                "Semua variant harus memiliki harga lebih dari 0."
-
-            );
-
+            alert("Semua variant harus memiliki harga lebih dari 0.");
             return;
-
         }
-
 
         /*
         |--------------------------------------------------------------------------
@@ -630,44 +371,19 @@ export function EditMenuForm({
         |--------------------------------------------------------------------------
         */
 
-        const variantIds =
+        const variantIds = menuVariants.map(
+            (item) => item.variantId
+        );
 
-            menuVariants.map(
+        const uniqueVariantIds = new Set(variantIds);
 
-                (item) =>
-
-                    item.variantId
-
-            );
-
-
-        const uniqueVariantIds =
-
-            new Set(
-
-                variantIds
-
-            );
-
-
-        if (
-
-            uniqueVariantIds.size !==
-
-            variantIds.length
-
-        ) {
-
+        if (uniqueVariantIds.size !== variantIds.length) {
             alert(
-
                 "Variant yang sama tidak boleh digunakan lebih dari satu kali pada menu ini."
-
             );
 
             return;
-
         }
-
 
         /*
         |--------------------------------------------------------------------------
@@ -676,13 +392,7 @@ export function EditMenuForm({
         */
 
         try {
-
-            setLoading(
-
-                true
-
-            );
-
+            setLoading(true);
 
             /*
             |--------------------------------------------------------------------------
@@ -690,10 +400,7 @@ export function EditMenuForm({
             |--------------------------------------------------------------------------
             */
 
-            const formData =
-
-                new FormData();
-
+            const formData = new FormData();
 
             /*
             |--------------------------------------------------------------------------
@@ -702,13 +409,9 @@ export function EditMenuForm({
             */
 
             formData.append(
-
                 "categoryId",
-
                 selectedCategory.id
-
             );
-
 
             /*
             |--------------------------------------------------------------------------
@@ -716,14 +419,7 @@ export function EditMenuForm({
             |--------------------------------------------------------------------------
             */
 
-            formData.append(
-
-                "name",
-
-                cleanName
-
-            );
-
+            formData.append("name", cleanName);
 
             /*
             |--------------------------------------------------------------------------
@@ -732,13 +428,9 @@ export function EditMenuForm({
             */
 
             formData.append(
-
                 "description",
-
                 description.trim()
-
             );
-
 
             /*
             |--------------------------------------------------------------------------
@@ -747,17 +439,9 @@ export function EditMenuForm({
             */
 
             formData.append(
-
                 "available",
-
-                String(
-
-                    available
-
-                )
-
+                String(available)
             );
-
 
             /*
             |--------------------------------------------------------------------------
@@ -774,22 +458,9 @@ export function EditMenuForm({
             |--------------------------------------------------------------------------
             */
 
-            if (
-
-                imageFile
-
-            ) {
-
-                formData.append(
-
-                    "image",
-
-                    imageFile
-
-                );
-
+            if (imageFile) {
+                formData.append("image", imageFile);
             }
-
 
             /*
             |--------------------------------------------------------------------------
@@ -798,53 +469,16 @@ export function EditMenuForm({
             */
 
             formData.append(
-
                 "variants",
-
                 JSON.stringify(
-
-                    menuVariants.map(
-
-                        (
-
-                            item,
-
-                            index
-
-                        ) => ({
-
-                            variantId:
-
-                                item.variantId,
-
-                            price:
-
-                                Number(
-
-                                    item.price
-
-                                ),
-
-                            available:
-
-                                Boolean(
-
-                                    item.available
-
-                                ),
-
-                            sortOrder:
-
-                                index,
-
-                        })
-
-                    )
-
+                    menuVariants.map((item, index) => ({
+                        variantId: item.variantId,
+                        price: Number(item.price),
+                        available: Boolean(item.available),
+                        sortOrder: index,
+                    }))
                 )
-
             );
-
 
             /*
             |--------------------------------------------------------------------------
@@ -852,16 +486,10 @@ export function EditMenuForm({
             |--------------------------------------------------------------------------
             */
 
-            const result =
-
-                await updateMenu(
-
-                    menu.id,
-
-                    formData
-
-                );
-
+            const result = await updateMenu(
+                menu.id,
+                formData
+            );
 
             /*
             |--------------------------------------------------------------------------
@@ -869,24 +497,14 @@ export function EditMenuForm({
             |--------------------------------------------------------------------------
             */
 
-            if (
-
-                !result.success
-
-            ) {
-
+            if (!result.success) {
                 alert(
-
                     result.error ??
-
                     "Gagal memperbarui menu."
-
                 );
 
                 return;
-
             }
-
 
             /*
             |--------------------------------------------------------------------------
@@ -894,12 +512,7 @@ export function EditMenuForm({
             |--------------------------------------------------------------------------
             */
 
-            alert(
-
-                "Menu berhasil diperbarui."
-
-            );
-
+            alert("Menu berhasil diperbarui.");
 
             /*
             |--------------------------------------------------------------------------
@@ -908,46 +521,21 @@ export function EditMenuForm({
             */
 
             onSuccess?.();
-
-
-        } catch (
-
-        error
-
-        ) {
-
+        } catch (error) {
             console.error(
-
                 "update menu error:",
-
                 error
-
             );
-
 
             alert(
-
                 error instanceof Error
-
                     ? error.message
-
                     : "Terjadi kesalahan saat memperbarui menu."
-
             );
-
-
         } finally {
-
-            setLoading(
-
-                false
-
-            );
-
+            setLoading(false);
         }
-
     }
-
 
     /*
     |--------------------------------------------------------------------------
@@ -956,22 +544,12 @@ export function EditMenuForm({
     */
 
     function handleCancel() {
-
-        if (
-
-            loading
-
-        ) {
-
+        if (loading) {
             return;
-
         }
 
-
         onCancel?.();
-
     }
-
 
     /*
     |--------------------------------------------------------------------------
@@ -980,413 +558,167 @@ export function EditMenuForm({
     */
 
     return (
-
         <form
-
-            ref={
-
-                formRef
-
-            }
-
-            onSubmit={
-
-                handleSubmit
-
-            }
-
+            ref={formRef}
+            onSubmit={handleSubmit}
             className="space-y-6"
-
         >
-
-
             {/* ================================================================
                 CATEGORY
             ================================================================ */}
 
             <div className="space-y-2">
-
-                <Label>
-
-                    Kategori
-
-                </Label>
-
+                <Label>Kategori</Label>
 
                 <CategorySearch
-
-                    categories={
-
-                        categories
-
-                    }
-
-                    value={
-
-                        selectedCategory
-
-                    }
-
-                    onChange={
-
-                        setSelectedCategory
-
-                    }
-
+                    categories={categories}
+                    value={selectedCategory}
+                    onChange={setSelectedCategory}
                 />
-
             </div>
-
 
             {/* ================================================================
                 NAME
             ================================================================ */}
 
             <div className="space-y-2">
-
-                <Label>
-
-                    Nama Menu
-
-                </Label>
-
+                <Label>Nama Menu</Label>
 
                 <Input
-
                     placeholder="Contoh: Thai Tea"
-
-                    value={
-
-                        name
-
+                    value={name}
+                    disabled={loading}
+                    onChange={(event) =>
+                        setName(event.target.value)
                     }
-
-                    disabled={
-
-                        loading
-
-                    }
-
-                    onChange={
-
-                        (event) =>
-
-                            setName(
-
-                                event.target.value
-
-                            )
-
-                    }
-
                 />
-
             </div>
-
 
             {/* ================================================================
                 DESCRIPTION
             ================================================================ */}
 
             <div className="space-y-2">
-
-                <Label>
-
-                    Deskripsi
-
-                </Label>
-
+                <Label>Deskripsi</Label>
 
                 <Textarea
-
                     placeholder="Deskripsi menu..."
-
-                    value={
-
-                        description
-
+                    value={description}
+                    disabled={loading}
+                    onChange={(event) =>
+                        setDescription(event.target.value)
                     }
-
-                    disabled={
-
-                        loading
-
-                    }
-
-                    onChange={
-
-                        (event) =>
-
-                            setDescription(
-
-                                event.target.value
-
-                            )
-
-                    }
-
                 />
-
             </div>
-
 
             {/* ================================================================
                 IMAGE
             ================================================================ */}
 
             <div className="space-y-2">
-
-                <Label>
-
-                    Gambar Menu
-
-                </Label>
-
+                <Label>Gambar Menu</Label>
 
                 <Input
-
                     type="file"
-
                     accept="image/jpeg,image/png,image/webp,image/gif"
-
-                    disabled={
-
-                        loading
-
-                    }
-
-                    onChange={
-
-                        handleImageChange
-
-                    }
-
+                    disabled={loading}
+                    onChange={handleImageChange}
                 />
-
 
                 {/* CURRENT IMAGE */}
 
-                {menu.imageUrl &&
+                {menu.imageUrl && !imageFile && (
+                    <div className="rounded-md border p-3">
+                        <p className="text-sm text-muted-foreground">
+                            Gambar saat ini:
+                        </p>
 
-                    !imageFile && (
+                        <p className="mt-1 text-sm font-medium">
+                            Gambar menu tersimpan
+                        </p>
 
-                        <div className="rounded-md border p-3">
-
-                            <p className="text-sm text-muted-foreground">
-
-                                Gambar saat ini:
-
-                            </p>
-
-
-                            <p className="mt-1 text-sm font-medium">
-
-                                Gambar menu tersimpan
-
-                            </p>
-
-
-                            <p className="mt-1 text-xs text-muted-foreground">
-
-                                Pilih file baru jika ingin mengganti gambar.
-
-                            </p>
-
-                        </div>
-
-                    )}
-
+                        <p className="mt-1 text-xs text-muted-foreground">
+                            Pilih file baru jika ingin mengganti gambar.
+                        </p>
+                    </div>
+                )}
 
                 {/* NEW IMAGE */}
 
                 {imageFile && (
-
                     <div className="space-y-1">
-
                         <p className="text-sm text-muted-foreground">
-
-                            File baru:
-
-                            {" "}
-
-                            {imageFile.name}
-
+                            File baru: {imageFile.name}
                         </p>
-
 
                         <p className="text-xs text-muted-foreground">
-
-                            Ukuran:
-
-                            {" "}
-
+                            Ukuran:{" "}
                             {(
-
                                 imageFile.size /
-
                                 1024 /
-
                                 1024
-
-                            ).toFixed(
-
-                                2
-
-                            )}
-
-                            {" "}
-
+                            ).toFixed(2)}{" "}
                             MB
-
                         </p>
-
                     </div>
-
                 )}
-
             </div>
-
 
             {/* ================================================================
                 MENU STATUS
             ================================================================ */}
 
             <div className="flex items-center justify-between rounded-lg border p-4">
-
                 <div>
-
-                    <Label>
-
-                        Status Menu
-
-                    </Label>
-
+                    <Label>Status Menu</Label>
 
                     <p className="text-sm text-muted-foreground">
-
                         Nonaktifkan jika menu sedang tidak dijual.
-
                         Data menu tetap tersimpan.
-
                     </p>
-
                 </div>
 
-
                 <Switch
-
-                    checked={
-
-                        available
-
-                    }
-
-                    onCheckedChange={
-
-                        setAvailable
-
-                    }
-
-                    disabled={
-
-                        loading
-
-                    }
-
+                    checked={available}
+                    onCheckedChange={setAvailable}
+                    disabled={loading}
                 />
-
             </div>
-
 
             {/* ================================================================
                 EDIT MENU VARIANTS
             ================================================================ */}
 
             <EditMenuVariantList
-
-                masterVariants={
-
-                    variants ?? []
-
-                }
-
-                selectedVariants={
-
-                    menuVariants
-
-                }
-
-                reusableMenuVariants={
-
-                    reusableMenuVariants
-
-                }
-
-                onChange={
-
-                    setMenuVariants
-
-                }
-
+                masterVariants={variants ?? []}
+                selectedVariants={menuVariants}
+                reusableMenuVariants={reusableMenuVariants}
+                onChange={setMenuVariants}
             />
-
 
             {/* ================================================================
                 BUTTON
             ================================================================ */}
 
             <div className="flex justify-end gap-2">
-
                 <Button
-
                     type="button"
-
                     variant="outline"
-
-                    disabled={
-
-                        loading
-
-                    }
-
-                    onClick={
-
-                        handleCancel
-
-                    }
-
+                    disabled={loading}
+                    onClick={handleCancel}
                 >
-
                     Batal
-
                 </Button>
-
 
                 <Button
-
                     type="submit"
-
-                    disabled={
-
-                        loading
-
-                    }
-
+                    disabled={loading}
                 >
-
                     {loading
-
                         ? "Menyimpan..."
-
                         : "Simpan Perubahan"}
-
                 </Button>
-
             </div>
-
-
         </form>
-
     );
-
 }

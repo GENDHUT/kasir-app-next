@@ -10,6 +10,7 @@ import {
     DialogTrigger,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { RefreshCw } from "lucide-react";
 import { MenuForm } from "./menu-form";
 import { getCategories } from "@/server/category";
 import { getVariants } from "@/server/variant";
@@ -65,16 +66,36 @@ export function AddMenuDialog() {
         setOpen(false);
     }
 
+    function handleRefreshPage() {
+        window.location.reload();
+    }
+
     return (
         <Dialog
             open={open}
             onOpenChange={handleOpenChange}
         >
-            <DialogTrigger asChild>
-                <Button type="button">
-                    Tambah Menu Baru
+            <div className="flex items-center gap-2">
+                <DialogTrigger asChild>
+                    <Button type="button">
+                        Tambah Menu Baru
+                    </Button>
+                </DialogTrigger>
+
+                <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    onClick={handleRefreshPage}
+                    title="Refresh halaman"
+                >
+                    <RefreshCw className="h-4 w-4" />
+
+                    <span className="sr-only">
+                        Refresh halaman
+                    </span>
                 </Button>
-            </DialogTrigger>
+            </div>
 
             <DialogContent className="w-[calc(100vw-2rem)] max-w-4xl max-h-[90vh] overflow-hidden p-6">
                 <DialogHeader>

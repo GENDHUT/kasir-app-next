@@ -1,9 +1,6 @@
 "use client";
 
-import {
-    useEffect,
-    useState,
-} from "react";
+import { useEffect, useState } from "react";
 
 import {
     Dialog,
@@ -61,24 +58,15 @@ import type {
 
 interface MenuWithRelations extends Menu {
     category: Category;
-
     menuVariants: Array<{
         id: string;
-
         menuId: string;
-
         variantId: string;
-
         price: number;
-
         available: boolean;
-
         sortOrder: number;
-
         createdAt: Date;
-
         updatedAt: Date;
-
         variant: Variant;
     }>;
 }
@@ -92,12 +80,8 @@ interface MenuWithRelations extends Menu {
 
 interface Props {
     menuId: string;
-
     open: boolean;
-
-    onOpenChange: (
-        open: boolean
-    ) => void;
+    onOpenChange: (open: boolean) => void;
 }
 
 
@@ -122,9 +106,7 @@ export function EditMenuDialog({
     const [
         menu,
         setMenu,
-    ] = useState<MenuWithRelations | null>(
-        null
-    );
+    ] = useState<MenuWithRelations | null>(null);
 
 
     /*
@@ -136,9 +118,7 @@ export function EditMenuDialog({
     const [
         categories,
         setCategories,
-    ] = useState<Category[]>(
-        []
-    );
+    ] = useState<Category[]>([]);
 
 
     /*
@@ -160,9 +140,7 @@ export function EditMenuDialog({
     const [
         variants,
         setVariants,
-    ] = useState<Variant[]>(
-        []
-    );
+    ] = useState<Variant[]>([]);
 
 
     /*
@@ -199,9 +177,7 @@ export function EditMenuDialog({
     const [
         reusableMenuVariants,
         setReusableMenuVariants,
-    ] = useState<ReusableMenuVariant[]>(
-        []
-    );
+    ] = useState<ReusableMenuVariant[]>([]);
 
 
     /*
@@ -213,9 +189,7 @@ export function EditMenuDialog({
     const [
         loading,
         setLoading,
-    ] = useState(
-        false
-    );
+    ] = useState(false);
 
 
     /*
@@ -225,13 +199,8 @@ export function EditMenuDialog({
     */
 
     async function loadData() {
-
         try {
-
-            setLoading(
-                true
-            );
-
+            setLoading(true);
 
             /*
             |--------------------------------------------------------------------------
@@ -262,44 +231,10 @@ export function EditMenuDialog({
                 variantData,
                 reusableMenuVariantData,
             ] = await Promise.all([
-
-                /*
-                |--------------------------------------------------------------------------
-                | MENU
-                |--------------------------------------------------------------------------
-                */
-
-                getMenuById(
-                    menuId
-                ),
-
-
-                /*
-                |--------------------------------------------------------------------------
-                | CATEGORIES
-                |--------------------------------------------------------------------------
-                */
-
+                getMenuById(menuId),
                 getCategories(),
-
-
-                /*
-                |--------------------------------------------------------------------------
-                | MASTER VARIANTS
-                |--------------------------------------------------------------------------
-                */
-
                 getVariants(),
-
-
-                /*
-                |--------------------------------------------------------------------------
-                | REUSABLE MENU VARIANTS
-                |--------------------------------------------------------------------------
-                */
-
                 getMenuVariantsForReuse(),
-
             ]);
 
 
@@ -346,26 +281,18 @@ export function EditMenuDialog({
                 reusableMenuVariantData
             );
 
-        } catch (
-        error
-        ) {
-
+        } catch (error) {
             console.error(
                 "Gagal mengambil data edit menu:",
                 error
             );
-
 
             alert(
                 "Gagal mengambil data menu."
             );
 
         } finally {
-
-            setLoading(
-                false
-            );
-
+            setLoading(false);
         }
     }
 
@@ -384,10 +311,7 @@ export function EditMenuDialog({
         |--------------------------------------------------------------------------
         */
 
-        if (
-            !open ||
-            !menuId
-        ) {
+        if (!open || !menuId) {
             return;
         }
 
@@ -419,10 +343,7 @@ export function EditMenuDialog({
     */
 
     function handleSuccess() {
-
-        onOpenChange(
-            false
-        );
+        onOpenChange(false);
     }
 
 
@@ -433,97 +354,56 @@ export function EditMenuDialog({
     */
 
     return (
-
         <Dialog
-            open={
-                open
-            }
-            onOpenChange={
-                onOpenChange
-            }
+            open={open}
+            onOpenChange={onOpenChange}
         >
-
             <DialogContent className="w-[calc(100vw-2rem)] max-w-4xl max-h-[90vh] overflow-hidden p-6">
 
-                {/* ==========================================================
-                    DIALOG HEADER
-                ========================================================== */}
+                {/* DIALOG HEADER */}
 
                 <DialogHeader>
-
                     <DialogTitle>
                         Edit Menu
                     </DialogTitle>
 
-
                     <DialogDescription>
                         Perbarui informasi menu, kategori, status, gambar, dan variant.
                     </DialogDescription>
-
                 </DialogHeader>
 
 
-                {/* ==========================================================
-                    DIALOG BODY
-                ========================================================== */}
+                {/* DIALOG BODY */}
 
                 <div className="min-w-0 max-h-[calc(90vh-8rem)] overflow-x-hidden overflow-y-auto pr-2">
 
-                    {/* ======================================================
-                        LOADING
-                    ====================================================== */}
+                    {/* LOADING */}
 
                     {loading ? (
-
                         <div className="flex min-h-[300px] items-center justify-center text-sm text-muted-foreground">
-
                             Memuat data menu...
-
                         </div>
 
                     ) : !menu ? (
 
-                        /* ==================================================
-                            MENU NOT FOUND
-                        ================================================== */
+                        /* MENU NOT FOUND */
 
                         <div className="flex min-h-[300px] items-center justify-center text-sm text-muted-foreground">
-
                             Data menu tidak ditemukan.
-
                         </div>
 
                     ) : (
 
-                        /* ==================================================
-                            EDIT MENU FORM
-                        ================================================== */
+                        /* EDIT MENU FORM */
 
                         <EditMenuForm
-                            menu={
-                                menu
-                            }
-
-                            categories={
-                                categories
-                            }
-
-                            variants={
-                                variants
-                            }
-
-                            reusableMenuVariants={
-                                reusableMenuVariants
-                            }
-
-                            onSuccess={
-                                handleSuccess
-                            }
-
+                            menu={menu}
+                            categories={categories}
+                            variants={variants}
+                            reusableMenuVariants={reusableMenuVariants}
+                            onSuccess={handleSuccess}
                             onCancel={() =>
-                                onOpenChange(
-                                    false
-                                )
+                                onOpenChange(false)
                             }
                         />
 
@@ -532,8 +412,6 @@ export function EditMenuDialog({
                 </div>
 
             </DialogContent>
-
         </Dialog>
-
     );
 }
