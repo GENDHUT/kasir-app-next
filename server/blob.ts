@@ -1,5 +1,3 @@
-"use server";
-
 import { del, put } from "@vercel/blob";
 
 /*
