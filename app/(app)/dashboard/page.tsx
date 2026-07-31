@@ -31,7 +31,7 @@ export default async function Dashboard() {
         </h1>
 
         <Image
-          src="/Photo_Pacarku.webp"
+          src="/Cantik.webp"
           alt="photo"
           width={400}
           height={400}

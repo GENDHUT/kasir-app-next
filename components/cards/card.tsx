@@ -5,7 +5,7 @@ export function PhotoCard() {
         <div className="flex flex-col items-center gap-4 rounded-xl border p-5">
 
             <Image
-                src="/PACARKUH.webp"
+                src="/Merah.webp"
                 alt="photo"
                 width={350}
                 height={350}
