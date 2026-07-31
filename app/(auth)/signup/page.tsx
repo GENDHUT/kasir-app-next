@@ -19,7 +19,7 @@ export default async function SignupPage() {
               alt="Logo"
               height={250}
               priority
-              src={"/logoPacarku.webp"}
+              src={"/Logo.webp"}
               width={250}
             />
           </div>

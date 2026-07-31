@@ -19,7 +19,7 @@ export default async function LoginPage() {
               alt="Logo"
               height={50}
               priority
-              src={"/logoPacarku.webp"}
+              src={"/Logo.webp"}
               width={50}
             />
           </div>

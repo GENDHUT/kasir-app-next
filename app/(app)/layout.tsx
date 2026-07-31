@@ -18,7 +18,7 @@ export default function DashboardLayout({
       <SidebarInset>
         <Header />
 
-        <main className="p-6">
+        <main className="px-6 pt-8 pb-6">
           {children}
         </main>
       </SidebarInset>

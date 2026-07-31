@@ -1,223 +1,179 @@
-  import * as React from "react"
-  import { ChevronRight } from "lucide-react"
+import * as React from "react";
+import { ChevronRight } from "lucide-react";
+import { SearchForm } from "@/components/search-form";
+import { Logo } from "./logo";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarRail,
+} from "@/components/ui/sidebar";
+import { getCurrentUser } from "@/server/users";
 
-  import { SearchForm } from "@/components/search-form"
-  import { VersionSwitcher } from "@/components/version-switcher"
-  import { Logo } from "./logo"
+/*
+|--------------------------------------------------------------------------
+| SIDEBAR DATA
+|--------------------------------------------------------------------------
+*/
 
-  import {
-    Collapsible,
-    CollapsibleContent,
-    CollapsibleTrigger,
-  } from "@/components/ui/collapsible"
-  import {
-    Sidebar,
-    SidebarContent,
-    SidebarFooter,
-    SidebarGroup,
-    SidebarGroupContent,
-    SidebarGroupLabel,
-    SidebarHeader,
-    SidebarMenu,
-    SidebarMenuButton,
-    SidebarMenuItem,
-    SidebarRail,
-  } from "@/components/ui/sidebar"
+const data = {
+  navMain: [
+    {
+      title: "Admin",
+      url: "/dashboard",
+      items: [
+        {
+          title: "Sign-up",
+          url: "/signup",
+        },
+        {
+          title: "Dashboard",
+          url: "/admin",
+        },
+        {
+          title: "Admin",
+          url: "/dashboard",
+        },
+      ],
+    },
+    {
+      title: "Kasir",
+      url: "#",
+      items: [
+        {
+          title: "Transaksi",
+          url: "/",
+        },
+        {
+          title: "Dashboard",
+          url: "#",
+          isActive: true,
+        },
+        // {
+        //   title: "History Pelayanan",
+        //   url: "#",
+        // },
+      ],
+    },
+  ],
+};
 
-  // This is sample data.
-  const data = {
-    // versions: ["1.0.1", "1.1.0-alpha", "2.0.0-beta1"],
-    navMain: [
-      {
-        title: "Admin Dahboard",
-        url: "/dashboard",
-        items: [
-          {
-            title: "Sign-up",
-            url: "/signup",
-          },
-          {
-            title: "Admin",
-            url: "/dashboard",
-          },
-        ],
-      },
-      {
-        title: "Penjualan",
-        url: "#",
-        items: [
-          {
-            title: "Transaksi",
-            url: "#",
-          },
-          {
-            title: "Banyak Transaksi",
-            url: "#",
-            isActive: true,
-          },
-          {
-            title: "History Pelayanan",
-            url: "#",
-          },
-          // {
-          //   title: "Caching",
-          //   url: "#",
-          // },
-          // {
-          //   title: "Styling",
-          //   url: "#",
-          // },
-          // {
-          //   title: "Optimizing",
-          //   url: "#",
-          // },
-          // {
-          //   title: "Configuring",
-          //   url: "#",
-          // },
-          // {
-          //   title: "Testing",
-          //   url: "#",
-          // },
-          // {
-          //   title: "Authentication",
-          //   url: "#",
-          // },
-          // {
-          //   title: "Deploying",
-          //   url: "#",
-          // },
-          // {
-          //   title: "Upgrading",
-          //   url: "#",
-          // },
-          // {
-          //   title: "Examples",
-          //   url: "#",
-          // },
-        ],
-      },
-      // {
-      //   title: "API Reference",
-      //   url: "#",
-      //   items: [
-      //     {
-      //       title: "Components",
-      //       url: "#",
-      //     },
-      //     {
-      //       title: "File Conventions",
-      //       url: "#",
-      //     },
-      //     {
-      //       title: "Functions",
-      //       url: "#",
-      //     },
-      //     {
-      //       title: "next.config.js Options",
-      //       url: "#",
-      //     },
-      //     {
-      //       title: "CLI",
-      //       url: "#",
-      //     },
-      //     {
-      //       title: "Edge Runtime",
-      //       url: "#",
-      //     },
-      //   ],
-      // },
-      // {
-      //   title: "Architecture",
-      //   url: "#",
-      //   items: [
-      //     {
-      //       title: "Accessibility",
-      //       url: "#",
-      //     },
-      //     {
-      //       title: "Fast Refresh",
-      //       url: "#",
-      //     },
-      //     {
-      //       title: "Next.js Compiler",
-      //       url: "#",
-      //     },
-      //     {
-      //       title: "Supported Browsers",
-      //       url: "#",
-      //     },
-      //     {
-      //       title: "Turbopack",
-      //       url: "#",
-      //     },
-      //   ],
-      // },
-      // {
-      //   title: "Community",
-      //   url: "#",
-      //   items: [
-      //     {
-      //       title: "Contribution Guide",
-      //       url: "#",
-      //     },
-      //   ],
-      // },
-    ],
-  }
+/*
+|--------------------------------------------------------------------------
+| PROPS
+|--------------------------------------------------------------------------
+*/
 
-  export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-    return (
+interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> { }
 
-      <Sidebar {...props}>
-        <SidebarHeader>
-          {/* <VersionSwitcher
-              versions={data.versions}
-              defaultVersion={data.versions[0]}
-            /> */}
-          <Logo />
-          <SearchForm />
-        </SidebarHeader>
-        <SidebarContent className="gap-0">
-          {/* We create a collapsible SidebarGroup for each parent. */}
-          {data.navMain.map((item) => (
-            <Collapsible
-              key={item.title}
-              title={item.title}
-              defaultOpen
-              className="group/collapsible"
-            >
-              <SidebarGroup>
-                <SidebarGroupLabel
-                  asChild
-                  className="group/label text-sm text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                >
-                  <CollapsibleTrigger>
-                    {item.title}{" "}
-                    <ChevronRight className="ml-auto transition-transform group-data-[state=open]/collapsible:rotate-90" />
-                  </CollapsibleTrigger>
-                </SidebarGroupLabel>
-                <CollapsibleContent>
-                  <SidebarGroupContent>
-                    <SidebarMenu>
-                      {item.items.map((item) => (
-                        <SidebarMenuItem key={item.title}>
-                          <SidebarMenuButton asChild isActive={item.isActive}>
-                            <a href={item.url}>{item.title}</a>
-                          </SidebarMenuButton>
-                        </SidebarMenuItem>
-                      ))}
-                    </SidebarMenu>
-                  </SidebarGroupContent>
-                </CollapsibleContent>
-              </SidebarGroup>
-            </Collapsible>
+/*
+|--------------------------------------------------------------------------
+| APP SIDEBAR
+|--------------------------------------------------------------------------
+*/
 
-          ))}
-        </SidebarContent>
-        <SidebarFooter>
-        </SidebarFooter>
-        <SidebarRail />
-      </Sidebar>
-    )
-  }
+export async function AppSidebar({ ...props }: AppSidebarProps) {
+  /*
+  |--------------------------------------------------------------------------
+  | CURRENT USER
+  |--------------------------------------------------------------------------
+  */
+
+  const user = await getCurrentUser();
+
+  /*
+  |--------------------------------------------------------------------------
+  | FILTER SIDEBAR MENU
+  |--------------------------------------------------------------------------
+  */
+
+  const visibleNavMain = data.navMain.filter((item) => {
+    if (item.title === "Admin" && user.role !== "ADMIN") {
+      return false;
+    }
+
+    return true;
+  });
+
+  /*
+  |--------------------------------------------------------------------------
+  | RENDER
+  |--------------------------------------------------------------------------
+  */
+
+  return (
+    <Sidebar {...props}>
+      {/* SIDEBAR HEADER */}
+
+      <SidebarHeader>
+        <Logo />
+        <SearchForm />
+      </SidebarHeader>
+
+      {/* SIDEBAR CONTENT */}
+
+      <SidebarContent className="gap-0">
+        {visibleNavMain.map((item) => (
+          <Collapsible
+            key={item.title}
+            title={item.title}
+            defaultOpen
+            className="group/collapsible"
+          >
+            <SidebarGroup>
+              <SidebarGroupLabel
+                asChild
+                className="group/label text-sm text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+              >
+                <CollapsibleTrigger>
+                  {item.title}
+
+                  <ChevronRight className="ml-auto transition-transform group-data-[state=open]/collapsible:rotate-90" />
+                </CollapsibleTrigger>
+              </SidebarGroupLabel>
+
+              <CollapsibleContent>
+                <SidebarGroupContent>
+                  <SidebarMenu>
+                    {item.items.map((subItem) => (
+                      <SidebarMenuItem key={subItem.title}>
+                        <SidebarMenuButton
+                          asChild
+                          isActive={subItem.isActive}
+                        >
+                          <a href={subItem.url}>
+                            {subItem.title}
+                          </a>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    ))}
+                  </SidebarMenu>
+                </SidebarGroupContent>
+              </CollapsibleContent>
+            </SidebarGroup>
+          </Collapsible>
+        ))}
+      </SidebarContent>
+
+      {/* SIDEBAR FOOTER */}
+
+      <SidebarFooter />
+
+      {/* SIDEBAR RAIL */}
+
+      <SidebarRail />
+    </Sidebar>
+  );
+}

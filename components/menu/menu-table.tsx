@@ -30,6 +30,7 @@ import {
 import { deleteMenu } from "@/server/menu";
 
 import { EditMenuDialog } from "./edit-menu-dialog";
+import { MenuPreviewDialog } from "./menu-preview-dialog";
 
 interface MenuTableProps {
     menus: any[];
@@ -39,8 +40,19 @@ export function MenuTable({ menus }: MenuTableProps) {
     const router = useRouter();
 
     const [selectedMenu, setSelectedMenu] = useState<any | null>(null);
+    const [previewMenu, setPreviewMenu] = useState<any | null>(null);
     const [editingMenuId, setEditingMenuId] = useState<string | null>(null);
     const [deleting, setDeleting] = useState(false);
+
+    /*
+    |--------------------------------------------------------------------------
+    | PREVIEW CLICK
+    |--------------------------------------------------------------------------
+    */
+
+    function handlePreviewClick(menu: any) {
+        setPreviewMenu(menu);
+    }
 
     /*
     |--------------------------------------------------------------------------
@@ -125,21 +137,45 @@ export function MenuTable({ menus }: MenuTableProps) {
                     ) : (
                         menus.map((menu, index) => (
                             <TableRow key={menu.id}>
-                                <TableCell>{index + 1}</TableCell>
+                                <TableCell>
+                                    {index + 1}
+                                </TableCell>
+
+                                {/* MENU IMAGE PREVIEW */}
 
                                 <TableCell>
                                     {menu.imageUrl ? (
-                                        <Image
-                                            src={menu.imageUrl}
-                                            alt={menu.name}
-                                            width={60}
-                                            height={60}
-                                            className="h-15 w-15 rounded-md object-cover"
-                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() =>
+                                                handlePreviewClick(menu)
+                                            }
+                                            className="group relative block h-15 w-15 overflow-hidden rounded-md focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                                            title={`Lihat detail ${menu.name}`}
+                                        >
+                                            <Image
+                                                src={menu.imageUrl}
+                                                alt={menu.name}
+                                                width={60}
+                                                height={60}
+                                                className="h-15 w-15 object-cover transition-transform duration-200 group-hover:scale-110"
+                                            />
+
+                                            <div className="absolute inset-0 flex items-center justify-center bg-black/0 text-xs text-white opacity-0 transition-all duration-200 group-hover:bg-black/40 group-hover:opacity-100">
+                                                Lihat
+                                            </div>
+                                        </button>
                                     ) : (
-                                        <div className="flex h-15 w-15 items-center justify-center rounded-md bg-muted text-xs text-muted-foreground">
+                                        <button
+                                            type="button"
+                                            onClick={() =>
+                                                handlePreviewClick(menu)
+                                            }
+                                            className="flex h-15 w-15 items-center justify-center rounded-md bg-muted text-xs text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                                            title={`Lihat detail ${menu.name}`}
+                                        >
                                             No Image
-                                        </div>
+                                        </button>
                                     )}
                                 </TableCell>
 
@@ -229,6 +265,18 @@ export function MenuTable({ menus }: MenuTableProps) {
                 </TableBody>
             </Table>
 
+            {/* MENU PREVIEW */}
+
+            <MenuPreviewDialog
+                menu={previewMenu}
+                open={Boolean(previewMenu)}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        setPreviewMenu(null);
+                    }
+                }}
+            />
+
             {/* EDIT MENU */}
 
             {editingMenuId && (
@@ -283,7 +331,9 @@ export function MenuTable({ menus }: MenuTableProps) {
                             }}
                             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                         >
-                            {deleting ? "Menghapus..." : "Ya, Hapus"}
+                            {deleting
+                                ? "Menghapus..."
+                                : "Ya, Hapus"}
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
