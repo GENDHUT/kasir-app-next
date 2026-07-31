@@ -4,8 +4,7 @@ import { asc, eq, inArray } from "drizzle-orm";
 import { db } from "@/db/drizzle";
 import { category, menu, menuVariant, variant } from "@/db/schema";
 import { requireAdmin } from "@/server/helper/permission";
-import { mkdir, unlink, writeFile } from "node:fs/promises";
-import path from "node:path";
+import { deleteImage, uploadImage } from "@/server/blob";
 
 /*
 |--------------------------------------------------------------------------
@@ -18,39 +17,6 @@ interface MenuVariantInput {
     price: number;
     available: boolean;
     sortOrder: number;
-}
-
-/*
-|--------------------------------------------------------------------------
-| IMAGE CONFIGURATION
-|--------------------------------------------------------------------------
-*/
-
-const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
-
-const ALLOWED_IMAGE_TYPES = [
-    "image/jpeg",
-    "image/png",
-    "image/webp",
-    "image/gif",
-];
-
-const LOCAL_UPLOAD_DIRECTORY = path.join(
-    process.cwd(),
-    "public",
-    "menus"
-);
-
-const LOCAL_IMAGE_URL_PREFIX = "/menus/";
-
-/*
-|--------------------------------------------------------------------------
-| ENVIRONMENT
-|--------------------------------------------------------------------------
-*/
-
-function isLocalEnvironment() {
-    return process.env.NODE_ENV !== "production";
 }
 
 /*
@@ -336,222 +302,54 @@ async function validateVariants(
 
 /*
 |--------------------------------------------------------------------------
-| GET LOCAL IMAGE FILE PATH
+| SAVE IMAGE (VERCEL BLOB)
 |--------------------------------------------------------------------------
-*/
-
-function getLocalImageFilePath(
-    imageUrl: string
-) {
-    const fileName =
-        path.basename(imageUrl);
-
-    return path.join(
-        LOCAL_UPLOAD_DIRECTORY,
-        fileName
-    );
-}
-
-/*
-|--------------------------------------------------------------------------
-| DELETE LOCAL IMAGE
-|--------------------------------------------------------------------------
-*/
-
-async function deleteLocalImage(
-    imageUrl?: string | null
-) {
-    if (
-        !imageUrl ||
-        !imageUrl.startsWith(
-            LOCAL_IMAGE_URL_PREFIX
-        )
-    ) {
-        return;
-    }
-
-    try {
-        const filePath =
-            getLocalImageFilePath(
-                imageUrl
-            );
-
-        await unlink(filePath);
-    } catch (error: unknown) {
-        const fileError =
-            error as {
-                code?: string;
-            };
-
-        if (
-            fileError.code !==
-            "ENOENT"
-        ) {
-            console.error(
-                "Gagal menghapus gambar lokal:",
-                error
-            );
-        }
-    }
-}
-
-/*
-|--------------------------------------------------------------------------
-| SAVE LOCAL IMAGE
-|--------------------------------------------------------------------------
-*/
-
-async function saveLocalImage(
-    file: File
-) {
-    /*
-    |--------------------------------------------------------------------------
-    | VALIDATE FILE TYPE
-    |--------------------------------------------------------------------------
-    */
-
-    if (
-        !ALLOWED_IMAGE_TYPES.includes(
-            file.type
-        )
-    ) {
-        throw new Error(
-            "Format gambar tidak didukung. Gunakan JPG, PNG, WEBP, atau GIF."
-        );
-    }
-
-    /*
-    |--------------------------------------------------------------------------
-    | VALIDATE FILE SIZE
-    |--------------------------------------------------------------------------
-    */
-
-    if (
-        file.size >
-        MAX_IMAGE_SIZE
-    ) {
-        throw new Error(
-            "Ukuran gambar maksimal 5 MB."
-        );
-    }
-
-    /*
-    |--------------------------------------------------------------------------
-    | CREATE DIRECTORY
-    |--------------------------------------------------------------------------
-    */
-
-    await mkdir(
-        LOCAL_UPLOAD_DIRECTORY,
-        {
-            recursive: true,
-        }
-    );
-
-    /*
-    |--------------------------------------------------------------------------
-    | EXTENSION
-    |--------------------------------------------------------------------------
-    */
-
-    const extensionMap: Record<
-        string,
-        string
-    > = {
-        "image/jpeg": ".jpg",
-        "image/png": ".png",
-        "image/webp": ".webp",
-        "image/gif": ".gif",
-    };
-
-    const extension =
-        extensionMap[file.type];
-
-    if (!extension) {
-        throw new Error(
-            "Ekstensi gambar tidak valid."
-        );
-    }
-
-    /*
-    |--------------------------------------------------------------------------
-    | GENERATE FILE NAME
-    |--------------------------------------------------------------------------
-    */
-
-    const fileName =
-        `${crypto.randomUUID()}${extension}`;
-
-    const filePath =
-        path.join(
-            LOCAL_UPLOAD_DIRECTORY,
-            fileName
-        );
-
-    /*
-    |--------------------------------------------------------------------------
-    | WRITE FILE
-    |--------------------------------------------------------------------------
-    */
-
-    const bytes =
-        await file.arrayBuffer();
-
-    const buffer =
-        Buffer.from(bytes);
-
-    await writeFile(
-        filePath,
-        buffer
-    );
-
-    return {
-        filePath,
-
-        imageUrl:
-            `${LOCAL_IMAGE_URL_PREFIX}${fileName}`,
-    };
-}
-
-/*
-|--------------------------------------------------------------------------
-| SAVE IMAGE
+|
+| Wrapper tipis ke uploadImage() di blob.ts.
+|
+| Nama field "filePath" tetap dipertahankan (walau isinya
+| sekarang imageUrl blob) supaya logic cleanup di bawah
+| (createMenu & updateMenu) tidak perlu diubah strukturnya,
+| cukup ganti unlink() -> deleteImage().
+|
 |--------------------------------------------------------------------------
 */
 
 async function saveImage(
     file: File
 ) {
-    /*
-    |--------------------------------------------------------------------------
-    | LOCAL DEVELOPMENT
-    |--------------------------------------------------------------------------
-    */
-
-    if (
-        isLocalEnvironment()
-    ) {
-        return saveLocalImage(
-            file
+    const uploaded =
+        await uploadImage(
+            file,
+            "menus"
         );
-    }
-
-    /*
-    |--------------------------------------------------------------------------
-    | PRODUCTION
-    |--------------------------------------------------------------------------
-    |
-    | Untuk production nanti sebaiknya
-    | menggunakan Cloudinary, Vercel Blob,
-    | S3, atau storage lainnya.
-    |
-    |--------------------------------------------------------------------------
-    */
 
     return {
-        filePath: null,
-        imageUrl: null,
+        filePath:
+            uploaded.imageUrl,
+
+        imageUrl:
+            uploaded.imageUrl,
     };
+}
+
+/*
+|--------------------------------------------------------------------------
+| DELETE LOCAL IMAGE (VERCEL BLOB)
+|--------------------------------------------------------------------------
+|
+| Nama fungsi dipertahankan (dipakai di updateMenu & deleteMenu)
+| tapi sekarang menghapus file di Vercel Blob, bukan filesystem lokal.
+|
+|--------------------------------------------------------------------------
+*/
+
+async function deleteLocalImage(
+    imageUrl?: string | null
+) {
+    await deleteImage(
+        imageUrl
+    );
 }
 
 /*
@@ -827,7 +625,7 @@ export const createMenu = async (
             uploadedImagePath
         ) {
             try {
-                await unlink(
+                await deleteImage(
                     uploadedImagePath
                 );
             } catch (
@@ -1494,7 +1292,7 @@ export const updateMenu =
                 uploadedImagePath
             ) {
                 try {
-                    await unlink(
+                    await deleteImage(
                         uploadedImagePath
                     );
                 } catch (
