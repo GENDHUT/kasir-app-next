@@ -1,9 +1,18 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Suspense } from "react";
-import { ResetPasswordForm } from "@/components/forms/reset-password-form";
+import { ChangePasswordForm } from "@/components/forms/ChangePasswordForm";
+import {
+  requireRole,
+} from "@/server/helper/permission";
 
-export default function LoginPage() {
+
+export default async function ResetPass() {
+  await requireRole(
+    "ADMIN",
+    "EMPLOYEE"
+  );
+
   return (
     <div className="flex min-h-svh flex-col items-center justify-center gap-6 bg-muted p-6 md:p-10">
       <div className="flex w-full max-w-sm flex-col gap-6">
@@ -13,17 +22,17 @@ export default function LoginPage() {
         >
           <div className="flex size-6 items-center justify-center rounded-md bg-primary text-primary-foreground">
             <Image
-              alt="Better Auth Starter Logo"
+              alt="Logo"
               height={50}
               priority
-              src={"/better-auth-starter.png"}
+              src={"/Logo.webp"}
               width={50}
             />
           </div>
-          Better Auth Starter
+          Ala-Ala
         </Link>
         <Suspense fallback={<div>Loading...</div>}>
-          <ResetPasswordForm />
+          <ChangePasswordForm />
         </Suspense>      </div>
     </div>
   );

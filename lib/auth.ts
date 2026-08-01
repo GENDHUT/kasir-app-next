@@ -19,6 +19,12 @@ const resend = process.env.RESEND_API_KEY
   : null;
 
 export const auth = betterAuth({
+
+  // trusted origin
+  trustedOrigins: [
+    "http://localhost:3000",
+    "https://www.alal-ala.my.id",
+  ],
   /*
   |--------------------------------------------------------------------------
   | Email Verification
