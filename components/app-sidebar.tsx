@@ -57,8 +57,8 @@ const data = {
           url: "/",
         },
         {
-          title: "Dashboard",
-          url: "#",
+          title: "Reset-password",
+          url: "/reset-password",
           isActive: true,
         },
         // {

@@ -276,6 +276,24 @@ export function PaymentDialog({
 
     /*
     |--------------------------------------------------------------------------
+    | QUICK CASH AMOUNT OPTIONS
+    |--------------------------------------------------------------------------
+    */
+
+    const quickAmountOptions = order
+        ? [
+            order.total,
+            Math.ceil(order.total / 10000) * 10000,
+            Math.ceil(order.total / 50000) * 50000,
+            Math.ceil(order.total / 100000) * 100000,
+        ].filter(
+            (amount, index, array) => array.indexOf(amount) === index
+        )
+        : [];
+
+
+    /*
+    |--------------------------------------------------------------------------
     | RENDER
     |--------------------------------------------------------------------------
     */
@@ -289,17 +307,27 @@ export function PaymentDialog({
             open={open}
             onOpenChange={handleDialogChange}
         >
-            <DialogContent className="max-w-lg overflow-hidden p-0">
+            <DialogContent
+                className="
+                    flex flex-col gap-0 overflow-hidden p-0
+                    max-sm:inset-0 max-sm:top-0 max-sm:left-0
+                    max-sm:h-[100dvh] max-sm:max-h-[100dvh]
+                    max-sm:w-full max-sm:max-w-full
+                    max-sm:translate-x-0 max-sm:translate-y-0
+                    max-sm:rounded-none max-sm:border-0
+                    sm:max-h-[88vh] sm:max-w-lg sm:rounded-2xl
+                "
+            >
                 {/* ==========================================================
                     HEADER
                 =========================================================== */}
 
-                <DialogHeader className="border-b px-6 py-5">
-                    <DialogTitle className="text-xl">
+                <DialogHeader className="shrink-0 border-b px-4 py-4 text-left sm:px-6 sm:py-5">
+                    <DialogTitle className="text-lg sm:text-xl">
                         Pembayaran Pesanan
                     </DialogTitle>
 
-                    <DialogDescription>
+                    <DialogDescription className="text-xs sm:text-sm">
                         Selesaikan pembayaran untuk pesanan{" "}
                         <span className="font-semibold text-foreground">
                             {order.orderNumber}
@@ -312,19 +340,19 @@ export function PaymentDialog({
                     CONTENT
                 =========================================================== */}
 
-                <div className="max-h-[70vh] overflow-y-auto">
-                    <div className="space-y-6 p-6">
+                <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+                    <div className="space-y-5 p-4 sm:space-y-6 sm:p-6">
                         {/* ==================================================
                             ORDER SUMMARY
                         =================================================== */}
 
-                        <div className="rounded-xl border bg-muted/30 p-4">
-                            <div className="mb-4 flex items-center justify-between">
-                                <span className="text-sm text-muted-foreground">
+                        <div className="rounded-xl border bg-muted/30 p-3 sm:p-4">
+                            <div className="mb-3 flex flex-wrap items-center justify-between gap-2 sm:mb-4">
+                                <span className="text-xs text-muted-foreground sm:text-sm">
                                     Total Pembayaran
                                 </span>
 
-                                <span className="text-xl font-bold">
+                                <span className="text-lg font-bold sm:text-xl">
                                     {formatCurrency(order.total)}
                                 </span>
                             </div>
@@ -333,19 +361,20 @@ export function PaymentDialog({
                                 {order.items.map((item) => (
                                     <div
                                         key={item.id}
-                                        className="flex items-center justify-between gap-4 text-sm"
+                                        className="flex items-start justify-between gap-3 text-xs sm:text-sm"
                                     >
-                                        <div className="min-w-0">
-                                            <p className="truncate font-medium">
-                                                {item.quantity} x {item.menuName}
+                                        <p className="min-w-0 flex-1 break-words font-medium">
+                                            <span className="text-muted-foreground">
+                                                {item.quantity}x
+                                            </span>{" "}
+                                            {item.menuName}
 
-                                                {item.variantName && (
-                                                    <span className="text-muted-foreground">
-                                                        {" "}({item.variantName})
-                                                    </span>
-                                                )}
-                                            </p>
-                                        </div>
+                                            {item.variantName && (
+                                                <span className="text-muted-foreground">
+                                                    {" "}({item.variantName})
+                                                </span>
+                                            )}
+                                        </p>
                                     </div>
                                 ))}
                             </div>
@@ -356,12 +385,12 @@ export function PaymentDialog({
                             PAYMENT METHOD
                         =================================================== */}
 
-                        <div className="space-y-3">
-                            <Label>
+                        <div className="space-y-2 sm:space-y-3">
+                            <Label className="text-xs sm:text-sm">
                                 Metode Pembayaran
                             </Label>
 
-                            <div className="grid grid-cols-2 gap-3">
+                            <div className="grid grid-cols-2 gap-2 sm:gap-3">
                                 {/* ==========================================
                                     CASH
                                 =========================================== */}
@@ -373,17 +402,19 @@ export function PaymentDialog({
                                         handlePaymentMethodChange("CASH")
                                     }
                                     className={`
-                                        flex min-h-24 flex-col items-center
-                                        justify-center gap-2 rounded-xl border
-                                        p-4 text-sm font-medium transition
+                                        flex min-h-20 flex-col items-center
+                                        justify-center gap-1.5 rounded-xl border
+                                        p-3 text-xs font-medium transition
+                                        active:scale-[0.98]
                                         hover:bg-muted
+                                        sm:min-h-24 sm:gap-2 sm:p-4 sm:text-sm
                                         ${paymentMethod === "CASH"
                                             ? "border-primary bg-primary/5 ring-2 ring-primary/20"
                                             : "border-border"
                                         }
                                     `}
                                 >
-                                    <Wallet className="h-6 w-6" />
+                                    <Wallet className="h-5 w-5 sm:h-6 sm:w-6" />
 
                                     <span>
                                         Tunai
@@ -402,17 +433,19 @@ export function PaymentDialog({
                                         handlePaymentMethodChange("QRIS")
                                     }
                                     className={`
-                                        flex min-h-24 flex-col items-center
-                                        justify-center gap-2 rounded-xl border
-                                        p-4 text-sm font-medium transition
+                                        flex min-h-20 flex-col items-center
+                                        justify-center gap-1.5 rounded-xl border
+                                        p-3 text-xs font-medium transition
+                                        active:scale-[0.98]
                                         hover:bg-muted
+                                        sm:min-h-24 sm:gap-2 sm:p-4 sm:text-sm
                                         ${paymentMethod === "QRIS"
                                             ? "border-primary bg-primary/5 ring-2 ring-primary/20"
                                             : "border-border"
                                         }
                                     `}
                                 >
-                                    <QrCode className="h-6 w-6" />
+                                    <QrCode className="h-5 w-5 sm:h-6 sm:w-6" />
 
                                     <span>
                                         QRIS
@@ -427,13 +460,13 @@ export function PaymentDialog({
                         =================================================== */}
 
                         {paymentMethod === "CASH" && (
-                            <div className="space-y-5">
+                            <div className="space-y-4 sm:space-y-5">
                                 {/* ==========================================
                                     CASH INPUT
                                 =========================================== */}
 
                                 <div className="space-y-2">
-                                    <Label htmlFor="paidAmount">
+                                    <Label htmlFor="paidAmount" className="text-xs sm:text-sm">
                                         Uang Diterima
                                     </Label>
 
@@ -454,7 +487,7 @@ export function PaymentDialog({
                                                 )
                                             }
                                             disabled={isProcessing}
-                                            className="h-12 pl-10 text-lg font-semibold"
+                                            className="h-11 pl-10 text-base font-semibold sm:h-12 sm:text-lg"
                                         />
                                     </div>
                                 </div>
@@ -464,31 +497,22 @@ export function PaymentDialog({
                                     QUICK AMOUNT
                                 =========================================== */}
 
-                                <div className="flex flex-wrap gap-2">
-                                    {[
-                                        order.total,
-                                        Math.ceil(order.total / 10000) * 10000,
-                                        Math.ceil(order.total / 50000) * 50000,
-                                        Math.ceil(order.total / 100000) * 100000,
-                                    ]
-                                        .filter(
-                                            (amount, index, array) =>
-                                                array.indexOf(amount) === index
-                                        )
-                                        .map((amount) => (
-                                            <Button
-                                                key={amount}
-                                                type="button"
-                                                variant="outline"
-                                                size="sm"
-                                                disabled={isProcessing}
-                                                onClick={() =>
-                                                    handleQuickAmount(amount)
-                                                }
-                                            >
-                                                {formatCurrency(amount)}
-                                            </Button>
-                                        ))}
+                                <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                                    {quickAmountOptions.map((amount) => (
+                                        <Button
+                                            key={amount}
+                                            type="button"
+                                            variant="outline"
+                                            size="sm"
+                                            disabled={isProcessing}
+                                            onClick={() =>
+                                                handleQuickAmount(amount)
+                                            }
+                                            className="h-9 w-full px-2 text-xs sm:text-sm"
+                                        >
+                                            {formatCurrency(amount)}
+                                        </Button>
+                                    ))}
                                 </div>
 
 
@@ -497,24 +521,24 @@ export function PaymentDialog({
                                 =========================================== */}
 
                                 <div className="rounded-xl border bg-muted/30">
-                                    <div className="flex items-center justify-between border-b px-4 py-3">
-                                        <span className="text-sm text-muted-foreground">
+                                    <div className="flex items-center justify-between gap-2 border-b px-3 py-2.5 sm:px-4 sm:py-3">
+                                        <span className="text-xs text-muted-foreground sm:text-sm">
                                             Total
                                         </span>
 
-                                        <span className="font-semibold">
+                                        <span className="text-sm font-semibold sm:text-base">
                                             {formatCurrency(order.total)}
                                         </span>
                                     </div>
 
-                                    <div className="flex items-center justify-between px-4 py-3">
-                                        <span className="text-sm text-muted-foreground">
+                                    <div className="flex items-center justify-between gap-2 px-3 py-2.5 sm:px-4 sm:py-3">
+                                        <span className="text-xs text-muted-foreground sm:text-sm">
                                             Kembalian
                                         </span>
 
                                         <span
                                             className={`
-                                                font-bold
+                                                text-sm font-bold sm:text-base
                                                 ${isCashPaymentValid
                                                     ? "text-green-600"
                                                     : "text-muted-foreground"
@@ -534,20 +558,20 @@ export function PaymentDialog({
                         =================================================== */}
 
                         {paymentMethod === "QRIS" && (
-                            <div className="space-y-5">
+                            <div className="space-y-4 sm:space-y-5">
                                 {/* ==========================================
                                     QRIS TITLE
                                 =========================================== */}
 
-                                <div className="flex items-center gap-2">
-                                    <QrCode className="h-5 w-5" />
+                                <div className="flex items-start gap-2">
+                                    <QrCode className="mt-0.5 h-5 w-5 shrink-0" />
 
                                     <div>
-                                        <h3 className="font-semibold">
+                                        <h3 className="text-sm font-semibold sm:text-base">
                                             Scan QRIS
                                         </h3>
 
-                                        <p className="text-sm text-muted-foreground">
+                                        <p className="text-xs text-muted-foreground sm:text-sm">
                                             Scan kode QR menggunakan aplikasi
                                             pembayaran pelanggan.
                                         </p>
@@ -559,11 +583,11 @@ export function PaymentDialog({
                                     QRIS IMAGE
                                 =========================================== */}
 
-                                <div className="flex w-full items-center justify-center rounded-xl border bg-white p-4 shadow-sm">
+                                <div className="flex w-full items-center justify-center rounded-xl border bg-white p-3 shadow-sm sm:p-4">
                                     <img
                                         src={qrisImageUrl}
                                         alt="QRIS Pembayaran"
-                                        className="block h-auto w-full max-w-[360px] object-contain"
+                                        className="block h-auto w-full max-w-[260px] object-contain sm:max-w-[360px]"
                                     />
                                 </div>
 
@@ -572,8 +596,8 @@ export function PaymentDialog({
                                     QRIS INSTRUCTION
                                 =========================================== */}
 
-                                <div className="rounded-xl border bg-muted/30 p-4">
-                                    <p className="text-center text-sm leading-relaxed text-muted-foreground">
+                                <div className="rounded-xl border bg-muted/30 p-3 sm:p-4">
+                                    <p className="text-center text-xs leading-relaxed text-muted-foreground sm:text-sm">
                                         Silakan scan QRIS di atas menggunakan
                                         aplikasi pembayaran pelanggan.
                                         Pastikan nominal pembayaran sesuai
@@ -586,18 +610,18 @@ export function PaymentDialog({
                                     QRIS WARNING
                                 =========================================== */}
 
-                                <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-4">
+                                <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-3 sm:p-4">
                                     <div className="flex gap-3">
                                         <div className="mt-0.5 shrink-0">
                                             <QrCode className="h-5 w-5 text-amber-600" />
                                         </div>
 
                                         <div className="space-y-1">
-                                            <p className="text-sm font-semibold">
+                                            <p className="text-xs font-semibold sm:text-sm">
                                                 Konfirmasi Pembayaran
                                             </p>
 
-                                            <p className="text-sm leading-relaxed text-muted-foreground">
+                                            <p className="text-xs leading-relaxed text-muted-foreground sm:text-sm">
                                                 Pastikan pembayaran sudah
                                                 berhasil diterima sebelum
                                                 menekan tombol konfirmasi
@@ -615,7 +639,7 @@ export function PaymentDialog({
                         =================================================== */}
 
                         {errorMessage && (
-                            <div className="rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+                            <div className="rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2.5 text-xs text-destructive sm:px-4 sm:py-3 sm:text-sm">
                                 {errorMessage}
                             </div>
                         )}
@@ -627,12 +651,19 @@ export function PaymentDialog({
                     FOOTER
                 =========================================================== */}
 
-                <DialogFooter className="border-t bg-muted/20 px-6 py-4">
+                <DialogFooter
+                    className="
+                        shrink-0 flex-col-reverse gap-2 border-t
+                        bg-muted/20 px-4 py-3
+                        sm:flex-row sm:justify-end sm:gap-2 sm:px-6 sm:py-4
+                    "
+                >
                     <Button
                         type="button"
                         variant="outline"
                         disabled={isProcessing}
                         onClick={() => onOpenChange(false)}
+                        className="w-full sm:w-auto"
                     >
                         Batal
                     </Button>
@@ -645,6 +676,7 @@ export function PaymentDialog({
                                 isProcessing
                             }
                             onClick={handleCashPayment}
+                            className="w-full sm:w-auto"
                         >
                             {isProcessing ? (
                                 <>
@@ -663,6 +695,7 @@ export function PaymentDialog({
                             type="button"
                             disabled={isProcessing}
                             onClick={handleQrisPayment}
+                            className="w-full sm:w-auto"
                         >
                             {isProcessing ? (
                                 <>
