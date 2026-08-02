@@ -55,10 +55,10 @@ export interface ReceiptOrder {
 */
 
 export const STORE_INFO = {
-    name: "ALA-ALA DRINK AND FOOD",
+    name: "Drink & Food Ala-Ala",
     address: "Citra Indah Atas",
-    phone: "0877-8854-8565",
-    instagram: "@alaaladrink",
+    phone: "0882-9405-4850",
+    instagram: "@alaaladini.id",
     footerNote: "Terimakasih",
     logoUrl: "/Logo.webp",
 };
