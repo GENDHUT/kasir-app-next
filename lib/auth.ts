@@ -3,7 +3,7 @@ import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { nextCookies } from "better-auth/next-js";
 import { lastLoginMethod, username } from "better-auth/plugins";
 import { Resend } from "resend";
-import { expo } from "@better-auth/expo"; 
+import { expo } from "@better-auth/expo";
 
 import OrganizationInvitationEmail from "@/components/emails/organization-invitation";
 import ForgotPasswordEmail from "@/components/emails/reset-password";
@@ -26,6 +26,8 @@ export const auth = betterAuth({
     "http://localhost:3000",
     "https://www.alal-ala.my.id",
     "kasirapp://",
+    "exp://*",
+
   ],
   /*
   |--------------------------------------------------------------------------
@@ -101,19 +103,19 @@ export const auth = betterAuth({
     schema,
   }),
 
-  
 
-/*
-|--------------------------------------------------------------------------
-| Plugins
-|--------------------------------------------------------------------------
-*/
 
-plugins: [
-  username(),
-  lastLoginMethod(),
-  expo(),
-  nextCookies(),
-],
+  /*
+  |--------------------------------------------------------------------------
+  | Plugins
+  |--------------------------------------------------------------------------
+  */
+
+  plugins: [
+    username(),
+    lastLoginMethod(),
+    expo(),
+    nextCookies(),
+  ],
 });
 
