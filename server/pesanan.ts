@@ -7,19 +7,15 @@ import {
     menuVariant,
     order,
     orderItem,
-    variant,
     type NewOrder,
     type NewOrderItem,
 } from "@/db/schema";
 import { getCurrentUser } from "@/server/users";
 import { requireRole } from "@/server/helper/permission";
 
-
-/*
-|--------------------------------------------------------------------------
-| TYPES
-|--------------------------------------------------------------------------
-*/
+/* -------------------------------------------------------------------------- */
+/* TYPES                                                                      */
+/* -------------------------------------------------------------------------- */
 
 export interface CreateOrderItemInput {
     menuId: string;
@@ -41,38 +37,143 @@ export interface UpdateOrderInput {
     notes?: string;
 }
 
-
-/*
-|--------------------------------------------------------------------------
-| CREATE ORDER NUMBER
-|--------------------------------------------------------------------------
-*/
-
-function generateOrderNumber(): string {
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = String(now.getMonth() + 1).padStart(2, "0");
-    const day = String(now.getDate()).padStart(2, "0");
-    const time = String(Date.now()).slice(-6);
-
-    return `ORD-${year}${month}${day}-${time}`;
+export interface SyncOrderInput {
+    items: CreateOrderItemInput[];
+    discount?: number;
+    tax?: number;
+    notes?: string;
+    paymentMethod: "CASH" | "QRIS";
+    paidAmount: number;
+    changeAmount?: number;
+    createdAt: string;
+    completedAt: string;
+    clientOrderId?: string;
 }
 
+/* -------------------------------------------------------------------------- */
+/* HELPERS                                                                    */
+/* -------------------------------------------------------------------------- */
 
-/*
-|--------------------------------------------------------------------------
-| GET ALL ORDERS
-|--------------------------------------------------------------------------
-| ADMIN ONLY
-|
-| Mengambil semua pesanan dari semua status.
-|--------------------------------------------------------------------------
-*/
+function generateOrderNumber(referenceDate: Date = new Date()): string {
+    const year = referenceDate.getFullYear();
+    const month = String(referenceDate.getMonth() + 1).padStart(2, "0");
+    const day = String(referenceDate.getDate()).padStart(2, "0");
+    const time = String(referenceDate.getTime()).slice(-6);
+
+    return `ORD - ${ year }${ month }${ day } -${ time } `;
+}
+
+async function validateOrderItems(items: CreateOrderItemInput[]) {
+    if (!items?.length) {
+        throw new Error("Pesanan harus memiliki minimal satu menu.");
+    }
+
+    const validatedItems = [];
+
+    for (const item of items) {
+        if (!item.menuId || !item.menuVariantId) {
+            throw new Error("Menu dan variant harus dipilih.");
+        }
+
+        if (!Number.isInteger(item.quantity) || item.quantity <= 0) {
+            throw new Error("Jumlah menu harus lebih dari 0.");
+        }
+
+        const menuData = await db.query.menu.findFirst({
+            where: eq(menu.id, item.menuId),
+        });
+
+        if (!menuData) {
+            throw new Error("Menu tidak ditemukan.");
+        }
+
+        if (!menuData.available) {
+            throw new Error(`Menu "${menuData.name}" sedang tidak tersedia.`);
+        }
+
+        const menuVariantData = await db.query.menuVariant.findFirst({
+            where: and(
+                eq(menuVariant.id, item.menuVariantId),
+                eq(menuVariant.menuId, item.menuId)
+            ),
+            with: { variant: true },
+        });
+
+        if (!menuVariantData) {
+            throw new Error(
+                `Variant untuk menu "${menuData.name}" tidak ditemukan.`
+            );
+        }
+
+        if (!menuVariantData.available) {
+            throw new Error(
+                `Variant "${menuVariantData.variant.name}" untuk menu "${menuData.name}" sedang tidak tersedia.`
+            );
+        }
+
+        validatedItems.push({
+            menuId: menuData.id,
+            menuVariantId: menuVariantData.id,
+            variantId: menuVariantData.variantId,
+            menuName: menuData.name,
+            variantName: menuVariantData.variant.name,
+            unitPrice: menuVariantData.price,
+            quantity: item.quantity,
+            subtotal: menuVariantData.price * item.quantity,
+        });
+    }
+
+    return validatedItems;
+}
+
+function calculateTotals(
+    items: Awaited<ReturnType<typeof validateOrderItems>>,
+    discount = 0,
+    tax = 0
+) {
+    const subtotal = items.reduce(
+        (total, item) => total + item.subtotal,
+        0
+    );
+
+    const safeDiscount = Math.max(0, discount);
+    const safeTax = Math.max(0, tax);
+    const total = Math.max(0, subtotal - safeDiscount + safeTax);
+
+    return {
+        subtotal,
+        discount: safeDiscount,
+        tax: safeTax,
+        total,
+    };
+}
+
+function buildOrderItems(
+    orderId: string,
+    items: Awaited<ReturnType<typeof validateOrderItems>>
+): NewOrderItem[] {
+    return items.map((item) => ({
+        id: crypto.randomUUID(),
+        orderId,
+        menuId: item.menuId,
+        menuVariantId: item.menuVariantId,
+        variantId: item.variantId,
+        menuName: item.menuName,
+        variantName: item.variantName,
+        unitPrice: item.unitPrice,
+        quantity: item.quantity,
+        subtotal: item.subtotal,
+    }));
+}
+
+/* -------------------------------------------------------------------------- */
+/* GET ORDERS                                                                 */
+/* -------------------------------------------------------------------------- */
 
 export async function getOrders() {
     await requireRole("ADMIN");
 
-    const orders = await db.query.order.findMany({
+    return db.query.order.findMany({
         with: {
             user: true,
             items: {
@@ -85,25 +186,12 @@ export async function getOrders() {
         },
         orderBy: [desc(order.createdAt)],
     });
-
-    return orders;
 }
-
-
-/*
-|--------------------------------------------------------------------------
-| GET CURRENT USER ORDERS
-|--------------------------------------------------------------------------
-| ADMIN / EMPLOYEE
-|
-| Mengambil semua pesanan milik user yang sedang login.
-|--------------------------------------------------------------------------
-*/
 
 export async function getMyOrders() {
     const currentUser = await getCurrentUser();
 
-    const orders = await db.query.order.findMany({
+    return db.query.order.findMany({
         where: eq(order.userId, currentUser.id),
         with: {
             user: true,
@@ -117,35 +205,19 @@ export async function getMyOrders() {
         },
         orderBy: [desc(order.createdAt)],
     });
-
-    return orders;
 }
-
-
-/*
-|--------------------------------------------------------------------------
-| GET PENDING ORDERS
-|--------------------------------------------------------------------------
-| ADMIN:
-| Semua pending order.
-|
-| EMPLOYEE:
-| Hanya pending order miliknya sendiri.
-|--------------------------------------------------------------------------
-*/
 
 export async function getPendingOrders() {
     const currentUser = await getCurrentUser();
-    const isAdmin = currentUser.role === "ADMIN";
+    const whereCondition =
+        currentUser.role === "ADMIN"
+            ? eq(order.status, "PENDING")
+            : and(
+                  eq(order.status, "PENDING"),
+                  eq(order.userId, currentUser.id)
+              );
 
-    const whereCondition = isAdmin
-        ? eq(order.status, "PENDING")
-        : and(
-            eq(order.status, "PENDING"),
-            eq(order.userId, currentUser.id)
-        );
-
-    const orders = await db.query.order.findMany({
+    return db.query.order.findMany({
         where: whereCondition,
         with: {
             user: true,
@@ -159,37 +231,19 @@ export async function getPendingOrders() {
         },
         orderBy: [desc(order.createdAt)],
     });
-
-    return orders;
 }
-
-
-/*
-|--------------------------------------------------------------------------
-| GET COMPLETED ORDERS
-|--------------------------------------------------------------------------
-| ADMIN:
-| Melihat semua pesanan COMPLETED dari ADMIN maupun EMPLOYEE.
-|
-| EMPLOYEE:
-| Melihat hanya pesanan COMPLETED miliknya sendiri.
-|
-| Gunakan fungsi ini untuk history pribadi jika diperlukan.
-|--------------------------------------------------------------------------
-*/
 
 export async function getCompletedOrders() {
     const currentUser = await getCurrentUser();
-    const isAdmin = currentUser.role === "ADMIN";
+    const whereCondition =
+        currentUser.role === "ADMIN"
+            ? eq(order.status, "COMPLETED")
+            : and(
+                  eq(order.status, "COMPLETED"),
+                  eq(order.userId, currentUser.id)
+              );
 
-    const whereCondition = isAdmin
-        ? eq(order.status, "COMPLETED")
-        : and(
-            eq(order.status, "COMPLETED"),
-            eq(order.userId, currentUser.id)
-        );
-
-    const orders = await db.query.order.findMany({
+    return db.query.order.findMany({
         where: whereCondition,
         with: {
             user: true,
@@ -203,32 +257,13 @@ export async function getCompletedOrders() {
         },
         orderBy: [desc(order.completedAt)],
     });
-
-    return orders;
 }
-
-
-/*
-|--------------------------------------------------------------------------
-| GET ORDER HISTORY
-|--------------------------------------------------------------------------
-| ADMIN:
-| Melihat semua history transaksi dari ADMIN maupun EMPLOYEE.
-|
-| History:
-| - COMPLETED
-| - CANCELLED
-|
-| Fungsi ini cocok untuk halaman:
-| /pesanan
-|--------------------------------------------------------------------------
-*/
 
 export async function getOrderHistory() {
     await requireRole("ADMIN");
 
-    const orders = await db.query.order.findMany({
-        where: sql`${order.status} IN ('COMPLETED', 'CANCELLED')`,
+    return db.query.order.findMany({
+        where: sql`${ order.status } IN('COMPLETED', 'CANCELLED')`,
         with: {
             user: true,
             items: {
@@ -241,22 +276,7 @@ export async function getOrderHistory() {
         },
         orderBy: [desc(order.createdAt)],
     });
-
-    return orders;
 }
-
-
-/*
-|--------------------------------------------------------------------------
-| GET ORDER BY ID
-|--------------------------------------------------------------------------
-| ADMIN:
-| Dapat melihat semua pesanan.
-|
-| EMPLOYEE:
-| Hanya dapat melihat pesanan miliknya.
-|--------------------------------------------------------------------------
-*/
 
 export async function getOrderById(orderId: string) {
     const currentUser = await getCurrentUser();
@@ -289,106 +309,25 @@ export async function getOrderById(orderId: string) {
     return selectedOrder;
 }
 
-
-/*
-|--------------------------------------------------------------------------
-| VALIDATE ORDER ITEMS
-|--------------------------------------------------------------------------
-*/
-
-async function validateOrderItems(items: CreateOrderItemInput[]) {
-    if (!items || items.length === 0) {
-        throw new Error("Pesanan harus memiliki minimal satu menu.");
-    }
-
-    const validatedItems = [];
-
-    for (const item of items) {
-        if (!item.menuId || !item.menuVariantId) {
-            throw new Error("Menu dan variant harus dipilih.");
-        }
-
-        if (!Number.isInteger(item.quantity) || item.quantity <= 0) {
-            throw new Error("Jumlah menu harus lebih dari 0.");
-        }
-
-        const menuData = await db.query.menu.findFirst({
-            where: eq(menu.id, item.menuId),
-        });
-
-        if (!menuData) {
-            throw new Error("Menu tidak ditemukan.");
-        }
-
-        if (!menuData.available) {
-            throw new Error(`Menu "${menuData.name}" sedang tidak tersedia.`);
-        }
-
-        const menuVariantData = await db.query.menuVariant.findFirst({
-            where: and(
-                eq(menuVariant.id, item.menuVariantId),
-                eq(menuVariant.menuId, item.menuId)
-            ),
-            with: {
-                variant: true,
-            },
-        });
-
-        if (!menuVariantData) {
-            throw new Error(`Variant untuk menu "${menuData.name}" tidak ditemukan.`);
-        }
-
-        if (!menuVariantData.available) {
-            throw new Error(
-                `Variant "${menuVariantData.variant.name}" untuk menu "${menuData.name}" sedang tidak tersedia.`
-            );
-        }
-
-        validatedItems.push({
-            menuId: menuData.id,
-            menuVariantId: menuVariantData.id,
-            variantId: menuVariantData.variantId,
-            menuName: menuData.name,
-            variantName: menuVariantData.variant.name,
-            unitPrice: menuVariantData.price,
-            quantity: item.quantity,
-            subtotal: menuVariantData.price * item.quantity,
-        });
-    }
-
-    return validatedItems;
-}
-
-
-/*
-|--------------------------------------------------------------------------
-| CREATE ORDER
-|--------------------------------------------------------------------------
-*/
+/* -------------------------------------------------------------------------- */
+/* CREATE ORDER                                                               */
+/* -------------------------------------------------------------------------- */
 
 export async function createOrder(input: CreateOrderInput) {
     const currentUser = await requireRole("ADMIN", "EMPLOYEE");
-
     const validatedItems = await validateOrderItems(input.items);
 
-    const discount = Math.max(0, input.discount ?? 0);
-    const tax = Math.max(0, input.tax ?? 0);
-
-    const subtotal = validatedItems.reduce(
-        (total, item) => total + item.subtotal,
-        0
+    const { subtotal, discount, tax, total } = calculateTotals(
+        validatedItems,
+        input.discount ?? 0,
+        input.tax ?? 0
     );
 
-    const total = Math.max(
-        0,
-        subtotal - discount + tax
-    );
-
-    const newOrderId = crypto.randomUUID();
+    const orderId = crypto.randomUUID();
     const orderNumber = generateOrderNumber();
 
     const newOrder: NewOrder = {
-        id: newOrderId,
+        id: orderId,
         orderNumber,
         userId: currentUser.id,
         status: "PENDING",
@@ -403,18 +342,7 @@ export async function createOrder(input: CreateOrderInput) {
         notes: input.notes ?? null,
     };
 
-    const newOrderItems: NewOrderItem[] = validatedItems.map((item) => ({
-        id: crypto.randomUUID(),
-        orderId: newOrderId,
-        menuId: item.menuId,
-        menuVariantId: item.menuVariantId,
-        variantId: item.variantId,
-        menuName: item.menuName,
-        variantName: item.variantName,
-        unitPrice: item.unitPrice,
-        quantity: item.quantity,
-        subtotal: item.subtotal,
-    }));
+    const newOrderItems = buildOrderItems(orderId, validatedItems);
 
     await db.transaction(async (tx) => {
         await tx.insert(order).values(newOrder);
@@ -423,18 +351,15 @@ export async function createOrder(input: CreateOrderInput) {
 
     return {
         success: true,
-        orderId: newOrderId,
+        orderId,
         orderNumber,
         total,
     };
 }
 
-
-/*
-|--------------------------------------------------------------------------
-| UPDATE PENDING ORDER
-|--------------------------------------------------------------------------
-*/
+/* -------------------------------------------------------------------------- */
+/* UPDATE ORDER                                                               */
+/* -------------------------------------------------------------------------- */
 
 export async function updateOrder(
     orderId: string,
@@ -477,9 +402,9 @@ export async function updateOrder(
 
     const subtotal = validatedItems
         ? validatedItems.reduce(
-            (total, item) => total + item.subtotal,
-            0
-        )
+              (total, item) => total + item.subtotal,
+              0
+          )
         : existingOrder.subtotal;
 
     const total = Math.max(
@@ -489,27 +414,17 @@ export async function updateOrder(
 
     await db.transaction(async (tx) => {
         if (validatedItems) {
-            await tx.delete(orderItem).where(
-                eq(orderItem.orderId, orderId)
-            );
+            await tx
+                .delete(orderItem)
+                .where(eq(orderItem.orderId, orderId));
 
-            const updatedItems: NewOrderItem[] = validatedItems.map((item) => ({
-                id: crypto.randomUUID(),
-                orderId,
-                menuId: item.menuId,
-                menuVariantId: item.menuVariantId,
-                variantId: item.variantId,
-                menuName: item.menuName,
-                variantName: item.variantName,
-                unitPrice: item.unitPrice,
-                quantity: item.quantity,
-                subtotal: item.subtotal,
-            }));
-
-            await tx.insert(orderItem).values(updatedItems);
+            await tx
+                .insert(orderItem)
+                .values(buildOrderItems(orderId, validatedItems));
         }
 
-        await tx.update(order)
+        await tx
+            .update(order)
             .set({
                 subtotal,
                 discount,
@@ -528,16 +443,9 @@ export async function updateOrder(
     };
 }
 
-
-/*
-|--------------------------------------------------------------------------
-| CANCEL ORDER
-|--------------------------------------------------------------------------
-| PENDING -> CANCELLED
-|
-| Pesanan tidak dihapus dari database.
-|--------------------------------------------------------------------------
-*/
+/* -------------------------------------------------------------------------- */
+/* CANCEL ORDER                                                               */
+/* -------------------------------------------------------------------------- */
 
 export async function cancelOrder(orderId: string) {
     const currentUser = await requireRole("ADMIN", "EMPLOYEE");
@@ -554,14 +462,19 @@ export async function cancelOrder(orderId: string) {
         currentUser.role !== "ADMIN" &&
         existingOrder.userId !== currentUser.id
     ) {
-        throw new Error("Anda tidak memiliki akses untuk membatalkan pesanan ini.");
+        throw new Error(
+            "Anda tidak memiliki akses untuk membatalkan pesanan ini."
+        );
     }
 
     if (existingOrder.status !== "PENDING") {
-        throw new Error("Hanya pesanan pending yang dapat dibatalkan.");
+        throw new Error(
+            "Hanya pesanan pending yang dapat dibatalkan."
+        );
     }
 
-    await db.update(order)
+    await db
+        .update(order)
         .set({
             status: "CANCELLED",
             paymentStatus: "UNPAID",
@@ -576,14 +489,9 @@ export async function cancelOrder(orderId: string) {
     };
 }
 
-
-/*
-|--------------------------------------------------------------------------
-| COMPLETE CASH PAYMENT
-|--------------------------------------------------------------------------
-| PENDING -> COMPLETED
-|--------------------------------------------------------------------------
-*/
+/* -------------------------------------------------------------------------- */
+/* COMPLETE CASH PAYMENT                                                      */
+/* -------------------------------------------------------------------------- */
 
 export async function completeCashPayment(
     orderId: string,
@@ -603,20 +511,31 @@ export async function completeCashPayment(
         currentUser.role !== "ADMIN" &&
         existingOrder.userId !== currentUser.id
     ) {
-        throw new Error("Anda tidak memiliki akses untuk menyelesaikan pesanan ini.");
+        throw new Error(
+            "Anda tidak memiliki akses untuk menyelesaikan pesanan ini."
+        );
     }
 
     if (existingOrder.status !== "PENDING") {
-        throw new Error("Pesanan ini sudah tidak berstatus pending.");
+        throw new Error(
+            "Pesanan ini sudah tidak berstatus pending."
+        );
     }
 
-    if (paidAmount < existingOrder.total) {
-        throw new Error("Jumlah pembayaran kurang dari total pesanan.");
+    if (
+        typeof paidAmount !== "number" ||
+        !Number.isFinite(paidAmount) ||
+        paidAmount < existingOrder.total
+    ) {
+        throw new Error(
+            "Jumlah pembayaran kurang dari total pesanan."
+        );
     }
 
     const changeAmount = paidAmount - existingOrder.total;
 
-    await db.update(order)
+    await db
+        .update(order)
         .set({
             status: "COMPLETED",
             paymentMethod: "CASH",
@@ -634,14 +553,9 @@ export async function completeCashPayment(
     };
 }
 
-
-/*
-|--------------------------------------------------------------------------
-| COMPLETE QRIS PAYMENT
-|--------------------------------------------------------------------------
-| PENDING -> COMPLETED
-|--------------------------------------------------------------------------
-*/
+/* -------------------------------------------------------------------------- */
+/* COMPLETE QRIS PAYMENT                                                      */
+/* -------------------------------------------------------------------------- */
 
 export async function completeQrisPayment(orderId: string) {
     const currentUser = await requireRole("ADMIN", "EMPLOYEE");
@@ -658,14 +572,19 @@ export async function completeQrisPayment(orderId: string) {
         currentUser.role !== "ADMIN" &&
         existingOrder.userId !== currentUser.id
     ) {
-        throw new Error("Anda tidak memiliki akses untuk menyelesaikan pesanan ini.");
+        throw new Error(
+            "Anda tidak memiliki akses untuk menyelesaikan pesanan ini."
+        );
     }
 
     if (existingOrder.status !== "PENDING") {
-        throw new Error("Pesanan ini sudah tidak berstatus pending.");
+        throw new Error(
+            "Pesanan ini sudah tidak berstatus pending."
+        );
     }
 
-    await db.update(order)
+    await db
+        .update(order)
         .set({
             status: "COMPLETED",
             paymentMethod: "QRIS",
@@ -683,25 +602,118 @@ export async function completeQrisPayment(orderId: string) {
     };
 }
 
+/* -------------------------------------------------------------------------- */
+/* SYNC OFFLINE ORDER                                                         */
+/* -------------------------------------------------------------------------- */
 
-/*
-|--------------------------------------------------------------------------
-| GET ORDER STATISTICS
-|--------------------------------------------------------------------------
-| ADMIN ONLY
-|
-| Digunakan untuk dashboard history /pesanan.
-|
-| Data:
-| - Total completed order
-| - Total cancelled order
-| - Total revenue
-| - Cash transaction
-| - QRIS transaction
-| - Daily revenue
-| - Daily transaction
-|--------------------------------------------------------------------------
-*/
+export async function syncOfflineOrder(input: SyncOrderInput) {
+    const currentUser = await requireRole("ADMIN", "EMPLOYEE");
+
+    if (
+        input.paymentMethod !== "CASH" &&
+        input.paymentMethod !== "QRIS"
+    ) {
+        throw new Error("Metode pembayaran tidak valid.");
+    }
+
+    if (
+        typeof input.paidAmount !== "number" ||
+        !Number.isFinite(input.paidAmount) ||
+        input.paidAmount < 0
+    ) {
+        throw new Error("Jumlah pembayaran tidak valid.");
+    }
+
+    const createdAt = new Date(input.createdAt);
+    const completedAt = new Date(input.completedAt);
+
+    if (
+        Number.isNaN(createdAt.getTime()) ||
+        Number.isNaN(completedAt.getTime())
+    ) {
+        throw new Error("Waktu pesanan tidak valid.");
+    }
+
+    const now = new Date();
+    const fiveMinutesAhead =
+        now.getTime() + 5 * 60 * 1000;
+
+    if (createdAt.getTime() > fiveMinutesAhead) {
+        throw new Error(
+            "Waktu pesanan tidak valid (terdeteksi di masa depan)."
+        );
+    }
+
+    if (completedAt.getTime() < createdAt.getTime()) {
+        throw new Error(
+            "Waktu selesai tidak boleh sebelum waktu pesanan dibuat."
+        );
+    }
+
+    const validatedItems = await validateOrderItems(input.items);
+
+    const { subtotal, discount, tax, total } = calculateTotals(
+        validatedItems,
+        input.discount ?? 0,
+        input.tax ?? 0
+    );
+
+    if (input.paidAmount < total) {
+        throw new Error(
+            "Jumlah pembayaran kurang dari total pesanan."
+        );
+    }
+
+    // Jangan percaya changeAmount dari client.
+    const changeAmount = Math.max(
+        0,
+        input.paidAmount - total
+    );
+
+    const orderId = crypto.randomUUID();
+    const orderNumber = generateOrderNumber(createdAt);
+
+    const newOrder: NewOrder = {
+        id: orderId,
+        orderNumber,
+        userId: currentUser.id,
+        status: "COMPLETED",
+        paymentMethod: input.paymentMethod,
+        paymentStatus: "PAID",
+        subtotal,
+        discount,
+        tax,
+        total,
+        paidAmount: input.paidAmount,
+        changeAmount,
+        notes: input.notes ?? null,
+        createdAt,
+        updatedAt: now,
+        completedAt,
+    };
+
+    const newOrderItems = buildOrderItems(
+        orderId,
+        validatedItems
+    );
+
+    await db.transaction(async (tx) => {
+        await tx.insert(order).values(newOrder);
+        await tx.insert(orderItem).values(newOrderItems);
+    });
+
+    return {
+        success: true,
+        orderId,
+        orderNumber,
+        total,
+        clientOrderId: input.clientOrderId ?? null,
+    };
+}
+
+/* -------------------------------------------------------------------------- */
+/* ORDER STATISTICS                                                           */
+/* -------------------------------------------------------------------------- */
 
 export async function getOrderStatistics() {
     await requireRole("ADMIN");
@@ -724,21 +736,30 @@ export async function getOrderStatistics() {
     });
 
     const totalRevenue = completedOrders.reduce(
-        (total, currentOrder) => total + Number(currentOrder.total || 0),
+        (total, currentOrder) =>
+            total + Number(currentOrder.total || 0),
         0
     );
 
     const totalCash = completedOrders
-        .filter((currentOrder) => currentOrder.paymentMethod === "CASH")
+        .filter(
+            (currentOrder) =>
+                currentOrder.paymentMethod === "CASH"
+        )
         .reduce(
-            (total, currentOrder) => total + Number(currentOrder.total || 0),
+            (total, currentOrder) =>
+                total + Number(currentOrder.total || 0),
             0
         );
 
     const totalQris = completedOrders
-        .filter((currentOrder) => currentOrder.paymentMethod === "QRIS")
+        .filter(
+            (currentOrder) =>
+                currentOrder.paymentMethod === "QRIS"
+        )
         .reduce(
-            (total, currentOrder) => total + Number(currentOrder.total || 0),
+            (total, currentOrder) =>
+                total + Number(currentOrder.total || 0),
             0
         );
 
@@ -753,25 +774,35 @@ export async function getOrderStatistics() {
 
     for (const currentOrder of completedOrders) {
         const date = currentOrder.completedAt
-            ? new Date(currentOrder.completedAt).toISOString().split("T")[0]
-            : new Date(currentOrder.createdAt).toISOString().split("T")[0];
+            ? new Date(currentOrder.completedAt)
+                  .toISOString()
+                  .split("T")[0]
+            : new Date(currentOrder.createdAt)
+                  .toISOString()
+                  .split("T")[0];
 
         const existing = dailyMap.get(date);
 
         if (existing) {
-            existing.revenue += Number(currentOrder.total || 0);
+            existing.revenue += Number(
+                currentOrder.total || 0
+            );
             existing.orders += 1;
         } else {
             dailyMap.set(date, {
                 date,
-                revenue: Number(currentOrder.total || 0),
+                revenue: Number(
+                    currentOrder.total || 0
+                ),
                 orders: 1,
             });
         }
     }
 
-    const dailyRevenue = Array.from(dailyMap.values()).sort(
-        (a, b) => a.date.localeCompare(b.date)
+    const dailyRevenue = Array.from(
+        dailyMap.values()
+    ).sort((a, b) =>
+        a.date.localeCompare(b.date)
     );
 
     return {
@@ -784,18 +815,9 @@ export async function getOrderStatistics() {
     };
 }
 
-
-/*
-|--------------------------------------------------------------------------
-| DELETE ORDER
-|--------------------------------------------------------------------------
-| ADMIN ONLY
-|
-| Menghapus pesanan secara permanen.
-|
-| Digunakan untuk kebutuhan administratif.
-|--------------------------------------------------------------------------
-*/
+/* -------------------------------------------------------------------------- */
+/* DELETE ORDER                                                               */
+/* -------------------------------------------------------------------------- */
 
 export async function deleteOrder(orderId: string) {
     await requireRole("ADMIN");
@@ -808,9 +830,9 @@ export async function deleteOrder(orderId: string) {
         throw new Error("Pesanan tidak ditemukan.");
     }
 
-    await db.delete(order).where(
-        eq(order.id, orderId)
-    );
+    await db
+        .delete(order)
+        .where(eq(order.id, orderId));
 
     return {
         success: true,
