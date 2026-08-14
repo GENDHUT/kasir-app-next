@@ -26,7 +26,6 @@ export const auth = betterAuth({
     "http://localhost:3000",
     "https://www.alal-ala.my.id",
     "kasirapp://",
-    "exp://*",
 
   ],
   /*
