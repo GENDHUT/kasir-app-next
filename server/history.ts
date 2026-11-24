@@ -25,6 +25,18 @@ export interface HistoryDateFilterInput {
     endDate?: Date;
 }
 
+export interface HistoryPeriodOption {
+    id: string;
+    label: string;
+    startDate: string;
+    endDate: string;
+}
+
+export interface HistoryPeriodOptionsResult {
+    periods: HistoryPeriodOption[];
+    defaultPeriodId: string;
+}
+
 
 export interface HistoryQueryInput extends HistoryPaginationInput {
     startDate?: Date;
@@ -176,18 +188,24 @@ function createDateConditions(
     endDate?: Date
 ) {
     const conditions = [
-        sql`${ order.status } IN('COMPLETED', 'CANCELLED')`,
+        sql`${order.status} IN ('COMPLETED', 'CANCELLED')`,
     ];
 
     if (startDate) {
         conditions.push(
-            sql`${ order.createdAt } >= ${ startDate } `
+            sql`${order.createdAt} >= ${sql.param(
+                startDate,
+                order.createdAt
+            )}`
         );
     }
 
     if (endDate) {
         conditions.push(
-            sql`${ order.createdAt } <= ${ endDate } `
+            sql`${order.createdAt} <= ${sql.param(
+                endDate,
+                order.createdAt
+            )}`
         );
     }
 
@@ -200,21 +218,31 @@ function createCompletedDateConditions(
     endDate?: Date
 ) {
     const conditions = [
-        eq(
-            order.status,
-            "COMPLETED"
-        ),
+        eq(order.status, "COMPLETED"),
     ];
+
+    const transactionDate = sql`
+        COALESCE(
+            ${order.completedAt},
+            ${order.createdAt}
+        )
+    `;
 
     if (startDate) {
         conditions.push(
-            sql`${ order.completedAt } >= ${ startDate } `
+            sql`${transactionDate} >= ${sql.param(
+                startDate,
+                order.completedAt
+            )}`
         );
     }
 
     if (endDate) {
         conditions.push(
-            sql`${ order.completedAt } <= ${ endDate } `
+            sql`${transactionDate} <= ${sql.param(
+                endDate,
+                order.completedAt
+            )}`
         );
     }
 
@@ -239,6 +267,161 @@ function calculatePercentage(
             100
         ).toFixed(2)
     );
+}
+
+function formatDateKeyUTC(date: Date) {
+    const year = date.getUTCFullYear();
+    const month = String(date.getUTCMonth() + 1).padStart(2, "0");
+    const day = String(date.getUTCDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+}
+
+function getJakartaDateParts(date = new Date()) {
+    const parts = new Intl.DateTimeFormat("en-CA", {
+        timeZone: "Asia/Jakarta",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+    }).formatToParts(date);
+
+    const get = (type: string) =>
+        Number(parts.find((part) => part.type === type)?.value);
+
+    return {
+        year: get("year"),
+        month: get("month"),
+        day: get("day"),
+    };
+}
+
+function formatPeriodDate(dateKey: string) {
+    const [year, month, day] = dateKey.split("-").map(Number);
+
+    return new Intl.DateTimeFormat("id-ID", {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+        timeZone: "UTC",
+    }).format(new Date(Date.UTC(year, month - 1, day)));
+}
+
+/**
+ * Periode berjalan dimulai tanggal 14 dan berakhir tanggal 13
+ * bulan berikutnya. Jika transaksi pertama terjadi sebelum tanggal 14,
+ * periode awal aplikasi dibuat dari tanggal 1 sampai 13 bulan tersebut.
+ */
+export async function getHistoryPeriodOptions(): Promise<HistoryPeriodOptionsResult> {
+    await requireRole("ADMIN");
+
+    const [{ earliestDate }] = await db
+        .select({
+            earliestDate: sql<Date | null>`min(${order.createdAt})`,
+        })
+        .from(order);
+
+    const today = getJakartaDateParts();
+    const currentPeriodStart = new Date(
+        Date.UTC(today.year, today.month - 1, 14)
+    );
+
+    if (today.day < 14) {
+        currentPeriodStart.setUTCMonth(currentPeriodStart.getUTCMonth() - 1);
+    }
+
+    const earliest = earliestDate ? new Date(earliestDate) : currentPeriodStart;
+    const earliestParts = getJakartaDateParts(earliest);
+    const earliestDateKey = formatDateKeyUTC(
+        new Date(Date.UTC(earliestParts.year, earliestParts.month - 1, earliestParts.day))
+    );
+    const currentStartKey = formatDateKeyUTC(currentPeriodStart);
+
+    let cursor: Date;
+    const periods: HistoryPeriodOption[] = [];
+
+    // Periode awal 1-13 hanya dibuat jika transaksi pertama memang
+    // berada sebelum tanggal 14 dan terjadi sebelum periode berjalan.
+    if (
+        earliestDate &&
+        earliestParts.day < 14 &&
+        earliestDateKey < currentStartKey
+    ) {
+        const partialStart = new Date(
+            Date.UTC(earliestParts.year, earliestParts.month - 1, 1)
+        );
+        const partialEnd = new Date(
+            Date.UTC(earliestParts.year, earliestParts.month - 1, 13)
+        );
+
+        const startDate = formatDateKeyUTC(partialStart);
+        const endDate = formatDateKeyUTC(partialEnd);
+
+        periods.push({
+            id: startDate,
+            label: `Periode awal · ${formatPeriodDate(startDate)} – ${formatPeriodDate(endDate)}`,
+            startDate,
+            endDate,
+        });
+
+        cursor = new Date(
+            Date.UTC(earliestParts.year, earliestParts.month - 1, 14)
+        );
+    } else if (earliestDateKey > currentStartKey) {
+        // Jika data pertama berada pada periode aktif, mulai dari periode aktif.
+        cursor = new Date(currentPeriodStart);
+    } else {
+        cursor = new Date(
+            Date.UTC(earliestParts.year, earliestParts.month - 1, 14)
+        );
+    }
+
+    while (cursor.getTime() <= currentPeriodStart.getTime()) {
+        const startDate = formatDateKeyUTC(cursor);
+        const endDate = formatDateKeyUTC(
+            new Date(
+                Date.UTC(cursor.getUTCFullYear(), cursor.getUTCMonth() + 1, 13)
+            )
+        );
+
+        periods.push({
+            id: startDate,
+            label: `${formatPeriodDate(startDate)} – ${formatPeriodDate(endDate)}`,
+            startDate,
+            endDate,
+        });
+
+        cursor = new Date(
+            Date.UTC(cursor.getUTCFullYear(), cursor.getUTCMonth() + 1, 14)
+        );
+    }
+
+    if (periods.length === 0) {
+        const startDate = formatDateKeyUTC(currentPeriodStart);
+        const endDate = formatDateKeyUTC(
+            new Date(
+                Date.UTC(
+                    currentPeriodStart.getUTCFullYear(),
+                    currentPeriodStart.getUTCMonth() + 1,
+                    13
+                )
+            )
+        );
+
+        periods.push({
+            id: startDate,
+            label: `${formatPeriodDate(startDate)} – ${formatPeriodDate(endDate)}`,
+            startDate,
+            endDate,
+        });
+    }
+
+    const defaultPeriodId = periods.some((period) => period.id === currentStartKey)
+        ? currentStartKey
+        : periods[periods.length - 1].id;
+
+    return {
+        periods: periods.reverse(),
+        defaultPeriodId,
+    };
 }
 
 
@@ -529,14 +712,14 @@ export async function getHistoryLineChart(
             currentOrder.createdAt;
 
 
-        const date =
-            new Date(
-                transactionDate
-            )
-                .toISOString()
-                .split(
-                    "T"
-                )[0];
+        const dateParts = new Intl.DateTimeFormat("en-CA", {
+            timeZone: "Asia/Jakarta",
+            year: "numeric",
+            month: "2-digit",
+            day: "2-digit",
+        }).formatToParts(new Date(transactionDate));
+
+        const date = `${dateParts.find((part) => part.type === "year")?.value}-${dateParts.find((part) => part.type === "month")?.value}-${dateParts.find((part) => part.type === "day")?.value}`;
 
 
         const existing =
@@ -1380,7 +1563,12 @@ export async function getHistoryDashboard(
 
 
 export async function getHistoryPdfData(
-    filters?: HistoryDateFilterInput
+    filters?: HistoryDateFilterInput,
+    period?: {
+        label: string;
+        startDate?: string;
+        endDate?: string;
+    }
 ) {
     await requireRole("ADMIN");
 
@@ -1395,6 +1583,10 @@ export async function getHistoryPdfData(
     ]);
 
     return {
+        periodLabel: period?.label ?? "Semua Periode",
+        periodStart: period?.startDate,
+        periodEnd: period?.endDate,
+
         totalOrders: summary.totalTransactions,
 
         totalRevenue: summary.totalRevenue,

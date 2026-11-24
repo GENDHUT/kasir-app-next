@@ -38,7 +38,6 @@ function formatDate(date: string) {
 
 export function RevenueLineChart({
     data,
-    days = 30,
 }: RevenueLineChartProps) {
     return (
         <div className="rounded-xl border bg-card p-5 shadow-sm">
@@ -48,7 +47,7 @@ export function RevenueLineChart({
                 </h3>
 
                 <p className="mt-1 text-sm text-muted-foreground">
-                    Perkembangan pendapatan dan transaksi dalam {days} hari terakhir.
+                    Perkembangan pendapatan dan transaksi pada periode terpilih.
                 </p>
             </div>
 

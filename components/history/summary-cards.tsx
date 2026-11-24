@@ -48,7 +48,7 @@ export function SummaryCards({
                 </div>
 
                 <p className="mt-1 text-xs text-muted-foreground">
-                    Total pendapatan dari seluruh transaksi selesai
+                    Total pendapatan dari transaksi selesai pada periode terpilih
                 </p>
             </div>
 

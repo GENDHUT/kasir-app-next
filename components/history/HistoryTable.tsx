@@ -20,6 +20,8 @@ import type {
 interface HistoryTableProps {
     orders: HistoryOrder[];
     pagination: HistoryOrdersResult["pagination"];
+    startDate?: string;
+    endDate?: string;
 }
 
 // Jeda debounce sebelum search dikirim ke server, biar gak nembak
@@ -122,6 +124,8 @@ function formatDate(date: Date | string | null) {
 export default function HistoryTable({
     orders: initialOrders,
     pagination: initialPagination,
+    startDate,
+    endDate,
 }: HistoryTableProps) {
     const [orders, setOrders] = useState(initialOrders);
 
@@ -144,7 +148,12 @@ export default function HistoryTable({
     useEffect(() => {
         setOrders(initialOrders);
         setPagination(initialPagination);
-    }, [initialOrders, initialPagination]);
+        setSearchInput("");
+
+        if (debounceRef.current) {
+            clearTimeout(debounceRef.current);
+        }
+    }, [initialOrders, initialPagination, startDate, endDate]);
 
 
     /*
@@ -161,6 +170,12 @@ export default function HistoryTable({
                 page,
                 limit: pagination.limit,
                 search: search.trim() || undefined,
+                ...(startDate
+                    ? { startDate: new Date(`${startDate}T00:00:00+07:00`) }
+                    : {}),
+                ...(endDate
+                    ? { endDate: new Date(`${endDate}T23:59:59.999+07:00`) }
+                    : {}),
             });
 
             setOrders(result.data);
@@ -230,7 +245,9 @@ export default function HistoryTable({
                         </h2>
 
                         <p className="text-sm text-muted-foreground">
-                            Menampilkan seluruh riwayat transaksi.
+                            {startDate && endDate
+                                ? "Menampilkan transaksi pada periode yang dipilih."
+                                : "Menampilkan seluruh riwayat transaksi."}
                         </p>
                     </div>
 

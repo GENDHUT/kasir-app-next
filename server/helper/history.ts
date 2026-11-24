@@ -16,6 +16,9 @@ export interface HistoryPdfMenuData {
 }
 
 export interface HistoryPdfData {
+    periodLabel?: string;
+    periodStart?: string;
+    periodEnd?: string;
     totalOrders: number;
     totalRevenue: number;
     users: HistoryPdfUserData[];
@@ -25,8 +28,9 @@ export interface HistoryPdfData {
 const PDF_CONFIG = {
     marginX: 14,
     headerY: 20,
-    infoY: 28,
-    dividerY: 33,
+    infoY: 27,
+    periodY: 32,
+    dividerY: 38,
 
     summaryTitleY: 44,
     summaryTableY: 49,
@@ -88,17 +92,17 @@ function getGeneratedAt() {
     ).format(new Date());
 }
 
-function getFileName() {
-    const date =
-        new Date()
-            .toISOString()
-            .split("T")[0];
+function getFileName(data: HistoryPdfData) {
+    const periodKey = data.periodStart && data.periodEnd
+        ? `${data.periodStart}-sampai-${data.periodEnd}`
+        : new Date().toISOString().split("T")[0];
 
-    return `laporan-penjualan-${date}.pdf`;
+    return `laporan-penjualan-${periodKey}.pdf`;
 }
 
 function generateHeader(
-    pdf: jsPDF
+    pdf: jsPDF,
+    data: HistoryPdfData
 ) {
     pdf.setFontSize(
         PDF_CONFIG.titleFontSize
@@ -128,6 +132,13 @@ function generateHeader(
         `Dibuat pada : ${getGeneratedAt()}`,
         PDF_CONFIG.marginX,
         PDF_CONFIG.infoY
+    );
+
+    pdf.setFontSize(9);
+    pdf.text(
+        `Periode : ${data.periodLabel ?? "Semua Periode"}`,
+        PDF_CONFIG.marginX,
+        PDF_CONFIG.periodY
     );
 
     pdf.setDrawColor(
@@ -371,7 +382,8 @@ export function exportHistoryPdf(
         createPdf();
 
     generateHeader(
-        pdf
+        pdf,
+        data
     );
 
     generateSummaryTable(
@@ -394,6 +406,6 @@ export function exportHistoryPdf(
     );
 
     pdf.save(
-        getFileName()
+        getFileName(data)
     );
 }
